@@ -1092,6 +1092,18 @@ qx.Theme.define("qx.theme.tangible.Decoration", {
 
     "table-header-cell-first": { include: "table-header-cell" },
 
+    "virtual-background-header": {
+      include: "table-header-cell"
+    },
+
+    "virtual-background-span": {
+      include: "table-header-cell",
+      style: {
+        color: "table-row-line",
+        width: [0, 0, 1, 0]
+      }
+    },
+
     "progressive-table-header": {
       include: "button-box",
 
