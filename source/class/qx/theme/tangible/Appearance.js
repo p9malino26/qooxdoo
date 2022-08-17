@@ -1030,6 +1030,41 @@ qx.Theme.define("qx.theme.tangible.Appearance", {
     "row-layer": "widget",
     "column-layer": "widget",
 
+    "virtual-background-span": {
+      alias: "widget",
+
+      style(states) {
+        var style = {
+          decorator: "virtual-background-span"
+        };
+
+        if (states.header) {
+          style.decorator = "virtual-background-header";
+          style.backgroundColor = "table-header-cell";
+        } else if (states.selected) {
+          style.backgroundColor = "table-row-background-selected";
+        } else if (states.odd) {
+          style.backgroundColor = "table-row-background-odd";
+        } else {
+          style.backgroundColor = "table-row-background-even";
+        }
+
+        return style;
+      }
+    },
+
+    "virtual-list-header-cell": {
+      alias: "atom",
+
+      style(states) {
+        return {
+          font: "bold",
+          paddingTop: 3,
+          paddingLeft: 5
+        };
+      }
+    },
+
     "group-item": {
       include: "label",
       alias: "label",
@@ -2031,9 +2066,9 @@ qx.Theme.define("qx.theme.tangible.Appearance", {
 
       style(states) {
         // set the margin
-        var margin = [7, 0, 7, 10];
+        var margin = [0, 0, 0, 10];
         if (states.left || states.middle || states.right) {
-          margin = [7, 0, 7, 3];
+          margin = [0, 0, 0, 3];
         }
         var decorator = "toolbar-button";
         if (
