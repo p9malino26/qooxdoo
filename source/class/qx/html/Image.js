@@ -34,8 +34,9 @@ qx.Class.define("qx.html.Image", {
       "source",
       null,
       this._setSourceProperty,
-      (writer, key, property) =>
-        property.value && writer("src=" + JSON.stringify(property.value))
+      (serializer, key, property) =>
+        property.value &&
+        serializer.setAttribute("src", JSON.stringify(property.value))
     );
 
     this.registerProperty("scale", null, this._setScaleProperty);

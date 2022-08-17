@@ -35,7 +35,7 @@ qx.Class.define("qx.ui.virtual.layer.WidgetCellSpan", {
    *    in which the cells will be rendered
    */
   construct(widgetCellProvider, rowConfig, columnConfig) {
-    super();
+    super(rowConfig, columnConfig);
     this.setZIndex(12);
 
     this._spanManager = new qx.ui.virtual.layer.CellSpanManager(
@@ -276,7 +276,9 @@ qx.Class.define("qx.ui.virtual.layer.WidgetCellSpan", {
     },
 
     // overridden
-    _fullUpdate(firstRow, firstColumn, rowSizes, columnSizes) {
+    _fullUpdate(firstRow, firstColumn) {
+      let rowSizes = this.getPane().getRowSizes();
+      let columnSizes = this.getPane().getColumnSizes();
       this.__updateCellSpanData(
         firstRow,
         firstColumn,
@@ -285,11 +287,13 @@ qx.Class.define("qx.ui.virtual.layer.WidgetCellSpan", {
       );
 
       this.__updateCellSpanWidgets();
-      this._cellLayer.fullUpdate(firstRow, firstColumn, rowSizes, columnSizes);
+      this._cellLayer.fullUpdate(firstRow, firstColumn);
     },
 
     // overridden
-    _updateLayerWindow(firstRow, firstColumn, rowSizes, columnSizes) {
+    _updateLayerWindow(firstRow, firstColumn) {
+      let rowSizes = this.getPane().getRowSizes();
+      let columnSizes = this.getPane().getColumnSizes();
       this.__updateCellSpanData(
         firstRow,
         firstColumn,
@@ -298,12 +302,7 @@ qx.Class.define("qx.ui.virtual.layer.WidgetCellSpan", {
       );
 
       this.__updateCellSpanWidgets();
-      this._cellLayer.updateLayerWindow(
-        firstRow,
-        firstColumn,
-        rowSizes,
-        columnSizes
-      );
+      this._cellLayer.updateLayerWindow(firstRow, firstColumn);
     }
   },
 

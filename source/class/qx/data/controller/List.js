@@ -207,6 +207,11 @@ qx.Class.define("qx.data.controller.List", {
     }
   },
 
+  events: {
+    beforeApplyModel: "qx.event.type.Event",
+    afterApplyModel: "qx.event.type.Event"
+  },
+
   /*
   *****************************************************************************
      MEMBERS
@@ -369,6 +374,8 @@ qx.Class.define("qx.data.controller.List", {
      * @param old {qx.data.Array|null} The old model array.
      */
     _applyModel(value, old) {
+      this.fireEvent("beforeApplyModel");
+
       // remove the old listener
       if (old != undefined) {
         if (this.__changeModelListenerId != undefined) {
@@ -416,6 +423,8 @@ qx.Class.define("qx.data.controller.List", {
           }
         }
       }
+
+      this.fireEvent("afterApplyModel");
     },
 
     /**

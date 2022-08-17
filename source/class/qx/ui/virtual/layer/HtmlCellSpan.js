@@ -101,7 +101,9 @@ qx.Class.define("qx.ui.virtual.layer.HtmlCellSpan", {
     },
 
     // overridden
-    _fullUpdate(firstRow, firstColumn, rowSizes, columnSizes) {
+    _fullUpdate(firstRow, firstColumn) {
+      let rowSizes = this.getPane().getRowSizes();
+      let columnSizes = this.getPane().getColumnSizes();
       var html = [];
 
       var cells = this._spanManager.findCellsInWindow(
@@ -149,25 +151,34 @@ qx.Class.define("qx.ui.virtual.layer.HtmlCellSpan", {
       }
 
       // render non spanning cells
-      var left = 0;
-      var top = 0;
       var row = firstRow;
       var column = firstColumn;
-      for (var x = 0; x < rowSizes.length; x++) {
-        var left = 0;
+      for (
+        var rowSizeIndex = 0;
+        rowSizeIndex < rowSizes.length;
+        rowSizeIndex++
+      ) {
         var column = firstColumn;
-        var height = rowSizes[x];
-        for (var y = 0; y < columnSizes.length; y++) {
-          var width = columnSizes[y];
 
+        for (
+          var columnSizeIndex = 0;
+          columnSizeIndex < columnSizes.length;
+          columnSizeIndex++
+        ) {
           if (!spanMap[row][column]) {
-            this.__renderCell(html, row, column, left, top, width, height);
+            this.__renderCell(
+              html,
+              row,
+              column,
+              columnSizes[columnSizeIndex].left,
+              rowSizes[rowSizeIndex].top,
+              columnSizes[columnSizeIndex].width,
+              rowSizes[rowSizeIndex].height
+            );
           }
 
           column++;
-          left += width;
         }
-        top += height;
         row++;
       }
 

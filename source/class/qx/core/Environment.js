@@ -742,6 +742,15 @@
  *     </tr>
  *     <tr>
  *     <tr>
+ *       <td>qx.debug.io.remote</td><td><i>Boolean</i></td><td><code>true</code></td>
+ *       <td><i>default:</i> <code>false</code></td>
+ *     </tr>
+ *     <tr>
+ *     <tr>
+ *       <td>qx.debug.io.remote.data</td><td><i>Boolean</i></td><td><code>true</code></td>
+ *       <td><i>default:</i> <code>false</code></td>
+ *     </tr>
+ *     <tr>
  *       <td>qx.debug.property.level</td><td><i>Integer</i></td><td><code>0</code></td>
  *       <td><i>default:</i> <code>0</code></td>
  *     </tr>
@@ -901,6 +910,7 @@ qx.Bootstrap.define("qx.core.Environment", {
       "qx.optimization.strings": false,
       "qx.optimization.variables": false,
       "qx.optimization.variants": false,
+      "qx.test.delay.scale": null,
       // qooxdoo modules
       "module.databinding": true,
       "module.logger": true,

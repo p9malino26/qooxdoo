@@ -23,6 +23,20 @@
 qx.Interface.define("qx.ui.virtual.core.ILayer", {
   members: {
     /**
+     * Called once to connect the layer to the pane that uses it
+     *
+     * @param pane {qx.ui.virtual.core.Pane} the pane
+     */
+    connectToPane(pane) {},
+
+    /**
+     * Returns the connected pane
+     *
+     * @return {qx.ui.virtual.core.Pane} the connected pane
+     */
+    getPane() {},
+
+    /**
      * Do a complete update of the layer. All cached data should be discarded.
      * This method is called e.g. after changes to the grid geometry
      * (row/column sizes, row/column count, ...).
@@ -32,15 +46,11 @@ qx.Interface.define("qx.ui.virtual.core.ILayer", {
      *
      * @param firstRow {Integer} Index of the first row to display.
      * @param firstColumn {Integer} Index of the first column to display.
-     * @param rowSizes {Integer[]} Array of heights for each row to display.
-     * @param columnSizes {Integer[]} Array of widths for each column to display.
      */
-    fullUpdate(firstRow, firstColumn, rowSizes, columnSizes) {
+    fullUpdate(firstRow, firstColumn, columnSizes) {
       this.assertArgumentsCount(arguments, 6, 6);
       this.assertPositiveInteger(firstRow);
       this.assertPositiveInteger(firstColumn);
-      this.assertArray(rowSizes);
-      this.assertArray(columnSizes);
     },
 
     /**
@@ -55,15 +65,11 @@ qx.Interface.define("qx.ui.virtual.core.ILayer", {
      *
      * @param firstRow {Integer} Index of the first row to display.
      * @param firstColumn {Integer} Index of the first column to display.
-     * @param rowSizes {Integer[]} Array of heights for each row to display.
-     * @param columnSizes {Integer[]} Array of widths for each column to display.
      */
-    updateLayerWindow(firstRow, firstColumn, rowSizes, columnSizes) {
+    updateLayerWindow(firstRow, firstColumn) {
       this.assertArgumentsCount(arguments, 6, 6);
       this.assertPositiveInteger(firstRow);
       this.assertPositiveInteger(firstColumn);
-      this.assertArray(rowSizes);
-      this.assertArray(columnSizes);
     },
 
     /**

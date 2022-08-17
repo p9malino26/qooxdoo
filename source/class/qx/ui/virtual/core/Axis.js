@@ -31,11 +31,19 @@ qx.Class.define("qx.ui.virtual.core.Axis", {
   construct(defaultItemSize, itemCount) {
     super();
 
+    if (qx.core.Environment.get("qx.debug")) {
+      this.assertInteger(defaultItemSize, "Wrong 'defaultItemSize' argument");
+      this.assertInteger(itemCount, "Wrong 'itemCount' argument");
+    }
+
     this.itemCount = itemCount;
     this.defaultItemSize = defaultItemSize;
 
-    // sparse array
+    // sparse arrays
     this.customSizes = {};
+    this.__minSizes = {};
+    this.__maxSizes = {};
+    this.__flexes = {};
   },
 
   events: {
@@ -45,6 +53,15 @@ qx.Class.define("qx.ui.virtual.core.Axis", {
 
   members: {
     __ranges: null,
+
+    /** @type {Integer[]} sparse array of min sizes */
+    __minSizes: null,
+
+    /** @type {Integer[]} sparse array of max sizes */
+    __maxSizes: null,
+
+    /** @type {Integer[]} sparse array of flex sizes */
+    __flexes: null,
 
     /**
      * Get the default size of the items.
@@ -99,29 +116,102 @@ qx.Class.define("qx.ui.virtual.core.Axis", {
      */
     setItemSize(index, size) {
       if (qx.core.Environment.get("qx.debug")) {
-        this.assertArgumentsCount(arguments, 2, 2);
         this.assert(
           size >= 0 || size === null,
           "'size' must be 'null' or an integer larger than 0."
         );
       }
-      if (this.customSizes[index] == size) {
-        return;
+
+      if (this.__setSparseValue(this.customSizes, index, size)) {
+        this.__ranges = null;
+        this.fireNonBubblingEvent("change");
+      }
+    },
+
+    /**
+     * Sets the minimum size of a specific item
+     *
+     * @param index {Integer} Index of the item to change.
+     * @param size {Integer} New minimum size of the item, or null if no minimum
+     */
+    setItemMinSize(index, size) {
+      if (qx.core.Environment.get("qx.debug")) {
+        this.assert(
+          size >= 0 || size === null,
+          "'size' must be 'null' or an integer larger than 0."
+        );
       }
 
-      if (size === null) {
-        delete this.customSizes[index];
-      } else {
-        this.customSizes[index] = size;
+      this.__setSparseValue(this.__minSizes, index, size);
+    },
+
+    /**
+     * Sets the maximum size of a specific item
+     *
+     * @param index {Integer} Index of the item to change.
+     * @param size {Integer} New maximum size of the item, or null if no maximum
+     */
+    setItemMaxSize(index, size) {
+      if (qx.core.Environment.get("qx.debug")) {
+        this.assert(
+          size >= 0 || size === null,
+          "'size' must be 'null' or an integer larger than 0."
+        );
       }
-      this.__ranges = null;
-      this.fireNonBubblingEvent("change");
+
+      this.__setSparseValue(this.__maxSizes, index, size);
+    },
+
+    /**
+     * Sets the flex value of a specific item
+     *
+     * @param index {Integer} Index of the item to change.
+     * @param value {Integer} New flex value of the item, or null if no maximum
+     */
+    setItemFlex(index, value) {
+      if (qx.core.Environment.get("qx.debug")) {
+        this.assert(
+          value >= 0 || value === null,
+          "'size' must be 'null' or an integer larger than 0."
+        );
+      }
+
+      this.__setSparseValue(this.__flexes, index, value);
+    },
+
+    /**
+     * Sets a value in a sparse array
+     *
+     * @param sparseArray {Array} the array to change
+     * @param index {Integer} Index of the item to change.
+     * @param value New value of the item, or null if it should be deleted
+     * @return {Boolean} true if the value changed
+     */
+    __setSparseValue(sparseArray, index, value) {
+      if (qx.core.Environment.get("qx.debug")) {
+        this.assertInteger(index, "'index' must be an integer");
+      }
+
+      if (
+        sparseArray[index] === value ||
+        (sparseArray[index] === undefined && value === null)
+      ) {
+        return false;
+      }
+
+      if (value === null) {
+        delete sparseArray[index];
+      } else {
+        sparseArray[index] = value;
+      }
+      return true;
     },
 
     /**
      * Get the size of the item at the given index.
      *
-     * @param index {Integer} Index of the item to get the size for.
+     * @param index
+     *          {Integer} Index of the item to get the size for.
      * @return {Integer} Size of the item.
      */
     getItemSize(index) {
@@ -130,10 +220,49 @@ qx.Class.define("qx.ui.virtual.core.Axis", {
     },
 
     /**
+     * Get the minimum size of the item at the given index.
+     *
+     * @param index {Integer} Index of the item to get the size for.
+     * @return {Integer} Size of the item, or null
+     */
+    getItemMinSize(index) {
+      let value = this.__minSizes[index];
+      if (value === undefined) value = null;
+      return value;
+    },
+
+    /**
+     * Get the maximum size of the item at the given index.
+     *
+     * @param index {Integer} Index of the item to get the size for.
+     * @return {Integer} Size of the item, or null
+     */
+    getItemMaxSize(index) {
+      let value = this.__maxSizes[index];
+      if (value === undefined) value = null;
+      return value;
+    },
+
+    /**
+     * Get the flex value of the item at the given index.
+     *
+     * @param index {Integer} Index of the item to get the size for.
+     * @return {Integer} Flex value of the item, or null
+     */
+    getItemFlex(index) {
+      let value = this.__flexes[index];
+      if (value === undefined) value = null;
+      return value;
+    },
+
+    /**
      * Reset all custom sizes set with {@link #setItemSize}.
      */
     resetItemSizes() {
       this.customSizes = {};
+      this.__minSizes = {};
+      this.__maxSizes = {};
+      this.__flexes = {};
       this.__ranges = null;
       this.fireNonBubblingEvent("change");
     },
@@ -376,7 +505,7 @@ qx.Class.define("qx.ui.virtual.core.Axis", {
       var sum = 0;
       var sizes = [];
       var i = 0;
-      while (sum < minSizeSum) {
+      do {
         var itemSize =
           customSizes[startIndex] != null
             ? customSizes[startIndex]
@@ -388,7 +517,7 @@ qx.Class.define("qx.ui.virtual.core.Axis", {
         if (startIndex >= this.itemCount) {
           break;
         }
-      }
+      } while (sum < minSizeSum);
       return sizes;
     }
   },

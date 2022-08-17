@@ -80,10 +80,8 @@ qx.Class.define("qx.html.Element", {
           this._domNode.innerHTML = value;
         }
       },
-      function (writer, property, name) {
-        if (property.value) {
-          writer(property.value);
-        }
+      (serializer, property, name) => {
+        serializer.rawTextInBody(property.value);
       }
     );
   },
@@ -128,8 +126,6 @@ qx.Class.define("qx.html.Element", {
     __focusHandler: null,
 
     __mouseCapture: null,
-
-    __SELF_CLOSING_TAGS: null,
 
     /*
     ---------------------------------------------------------------------------
@@ -511,29 +507,28 @@ qx.Class.define("qx.html.Element", {
     /*
      * @Override
      */
-    serialize(writer) {
-      if (this.__childrenHaveChanged) {
-        this.importQxObjectIds();
-        this.__childrenHaveChanged = false;
-      }
-      return super.serialize(writer);
-    },
-
-    /*
-     * @Override
-     */
-    _serializeImpl(writer) {
-      writer("<", this._nodeName);
+    _serializeImpl(serializer) {
+      serializer.openTag(this._nodeName);
+      serializer.pushQxObject(this);
 
       // Copy attributes
-      var data = this.__attribValues;
-      if (data) {
-        var Attribute = qx.bom.element.Attribute;
-        for (var key in data) {
-          writer(" ");
-          Attribute.serialize(writer, key, data[key]);
+      if (this.__attribValues) {
+        for (var key in this.__attribValues) {
+          let result = qx.bom.element.Attribute.serialize(
+            key,
+            this.__attribValues[key]
+          );
+
+          for (let key in result) {
+            if (key != "data-qx-object-id") {
+              serializer.setAttribute(key, result[key]);
+            }
+          }
         }
       }
+
+      let id = serializer.getQxObjectIdFor(this);
+      if (id) serializer.setAttribute("data-qx-object-id", `"${id}"`);
 
       // Copy styles
       var data = this.__styleValues || {};
@@ -545,7 +540,7 @@ qx.Class.define("qx.html.Element", {
         var Style = qx.bom.element.Style;
         var css = Style.compile(data);
         if (css) {
-          writer(' style="', css, '"');
+          serializer.setAttribute("style", `"${css}"`);
         }
       }
 
@@ -555,30 +550,22 @@ qx.Class.define("qx.html.Element", {
         for (var key in this._properties) {
           let property = this._properties[key];
           if (property.serialize) {
-            writer(" ");
-            property.serialize.call(this, writer, key, property);
+            property.serialize.call(this, serializer, key, property);
           } else if (property.value !== undefined && property.value !== null) {
-            writer(" ");
             let value = JSON.stringify(property.value);
-            writer(key, "=", value);
+            serializer.setAttribute(key, value);
           }
         }
       }
 
       // Children
-      if (!this._children || !this._children.length) {
-        if (qx.html.Element.__SELF_CLOSING_TAGS[this._nodeName]) {
-          writer(">");
-        } else {
-          writer("></", this._nodeName, ">");
-        }
-      } else {
-        writer(">");
+      if (this._children) {
         for (var i = 0; i < this._children.length; i++) {
-          this._children[i]._serializeImpl(writer);
+          this._children[i]._serializeImpl(serializer);
         }
-        writer("</", this._nodeName, ">");
       }
+      serializer.closeTag();
+      serializer.popQxObject(this);
     },
 
     /**
@@ -619,107 +606,20 @@ qx.Class.define("qx.html.Element", {
       this.__childrenHaveChanged = true;
     },
 
-    /*
-     * @Override
-     */
-    getQxObject(id) {
-      if (this.__childrenHaveChanged) {
-        this.importQxObjectIds();
-        this.__childrenHaveChanged = false;
-      }
-      return super.getQxObject(id);
-    },
-
     /**
-     * When a tree of virtual dom is loaded via JSX code, the paths in the `data-qx-object-id`
-     * attribute are relative to the JSX, and these attribuite values need to be loaded into the
-     * `qxObjectId` property - while resolving the parent parts of the path.
+     * Works out the object ID to use on an actual DOM node
      *
-     * EG
-     *  <div data-qx-object-id="root">
-     *    <div>
-     *      <div data-qx-object-id="root/child">
-     *
-     * The root DIV has to take on the qxObjectId of "root", and the third DIV has to have the
-     * ID "child" and be owned by the first DIV.
-     *
-     * This function imports and resolves those IDs
+     * @returns {String}
      */
-    importQxObjectIds() {
-      let thisId = this.getQxObjectId();
-      let thisAttributeId = this.getAttribute("data-qx-object-id");
-      if (thisId) {
-        this.setAttribute("data-qx-object-id", thisId, true);
-      } else if (thisAttributeId) {
-        this.setQxObjectId(thisAttributeId);
-      }
-
-      const resolveImpl = node => {
-        if (!(node instanceof qx.html.Element)) {
-          return;
-        }
-        let id = node.getQxObjectId();
-        let attributeId = node.getAttribute("data-qx-object-id");
-        if (id) {
-          if (attributeId && !attributeId.endsWith(id)) {
-            this.warn(
-              `Attribute ID ${attributeId} is not compatible with the qxObjectId ${id}; the qxObjectId will take prescedence`
-            );
-          }
-          node.setAttribute("data-qx-object-id", id, true);
-        } else if (attributeId) {
-          let segs = attributeId ? attributeId.split("/") : [];
-
-          // Only one segment is easy, add directly to the parent
-          if (segs.length == 1) {
-            let parentNode = this;
-            parentNode.addOwnedQxObject(node, attributeId);
-
-            // Lots of segments
-          } else if (segs.length > 1) {
-            let parentNode = null;
-
-            // If the first segment is the outer parent
-            if (segs[0] == thisAttributeId || segs[0] == thisId) {
-              // Only two segments, means that the parent is the outer and the last segment
-              //  is the ID of the node being examined
-              if (segs.length == 2) {
-                parentNode = this;
-
-                // Otherwise resolve it further
-              } else {
-                // Extract the segments, exclude the first and last, and that leaves us with a relative ID path
-                let subId = qx.lang.Array.clone(segs);
-                subId.shift();
-                subId.pop();
-                subId = subId.join("/");
-                parentNode = this.getQxObject(subId);
-              }
-
-              // Not the outer node, then resolve as a global.
-            } else {
-              parentNode = qx.core.Id.getQxObject(attributeId);
-            }
-
-            if (!parentNode) {
-              throw new Error(
-                `Cannot resolve object id ancestors, id=${attributeId}`
-              );
-            }
-
-            parentNode.addOwnedQxObject(node, segs[segs.length - 1]);
-          }
-        }
-
-        let children = node.getChildren();
-        if (children) {
-          children.forEach(resolveImpl);
-        }
-      };
-
-      let children = this.getChildren();
-      if (children) {
-        children.forEach(resolveImpl);
+    _getApplicableQxObjectId() {
+      if (qx.core.Environment.get("module.objectid")) {
+        let target = this.getQxObjectId() ? this : this._qxObject;
+        let id = target ? qx.core.Id.getAbsoluteIdOf(target, true) : null;
+        return id;
+      } else {
+        throw new Error(
+          "Cannot get qxObjectId because module.objectid is false"
+        );
       }
     },
 
@@ -777,6 +677,8 @@ qx.Class.define("qx.html.Element", {
           Attribute.set(elem, key, data[key]);
         }
       }
+
+      Attribute.set(elem, "data-qx-object-id", this._getApplicableQxObjectId());
 
       // Copy styles
       var data = this.__styleValues;
@@ -909,20 +811,9 @@ qx.Class.define("qx.html.Element", {
 
       // Extract first element
       helper.innerHTML = html;
-      this.useElement(helper.firstChild);
+      this.useNode(helper.firstChild);
 
       return this._domNode;
-    },
-
-    /**
-     * Uses an existing element instead of creating one. This may be interesting
-     * when the DOM element is directly needed to add content etc.
-     *
-     * @param elem {Element} Element to reuse
-     * @deprecated {6.1} see useNode
-     */
-    useElement(elem) {
-      this.useNode(elem);
     },
 
     /**
@@ -1896,7 +1787,7 @@ qx.Class.define("qx.html.Element", {
       }
 
       if (key == "data-qx-object-id") {
-        this.setQxObjectId(value);
+        throw new Error("Cannot set the data-qx-object-id attribute directly");
       }
 
       // Uncreated elements simply copy all data
@@ -1973,25 +1864,6 @@ qx.Class.define("qx.html.Element", {
 
   defer(statics) {
     statics.__deferredCall = new qx.util.DeferredCall(statics.flush, statics);
-    statics.__SELF_CLOSING_TAGS = {};
-    [
-      "area",
-      "base",
-      "br",
-      "col",
-      "embed",
-      "hr",
-      "img",
-      "input",
-      "link",
-      "meta",
-      "param",
-      "source",
-      "track",
-      "wbr"
-    ].forEach(function (tagName) {
-      statics.__SELF_CLOSING_TAGS[tagName] = true;
-    });
   },
 
   /*

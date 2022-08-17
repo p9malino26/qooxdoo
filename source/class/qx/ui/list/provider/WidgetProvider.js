@@ -28,7 +28,8 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
 
   implement: [
     qx.ui.virtual.core.IWidgetCellProvider,
-    qx.ui.list.provider.IListProvider
+    qx.ui.list.provider.IListProvider,
+    qx.ui.virtual.core.ILayerCellSizeProvider
   ],
 
   include: [qx.ui.list.core.MWidgetController],
@@ -42,6 +43,7 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
     super();
 
     this._list = list;
+    this.__cellWidgets = {};
 
     this._itemRenderer = this.createItemRenderer();
     this._groupRenderer = this.createGroupRenderer();
@@ -51,6 +53,20 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
     this._list.addListener("changeDelegate", this._onChangeDelegate, this);
   },
 
+  properties: {
+    /** Whether to show headers */
+    showHeaders: {
+      init: true,
+      check: "Boolean",
+      apply: "_applyShowHeaders"
+    }
+  },
+
+  events: {
+    /** Fired when properties of the model change */
+    change: "qx.event.type.Data"
+  },
+
   members: {
     /** @type {qx.ui.virtual.cell.WidgetCell} the used item renderer */
     _itemRenderer: null,
@@ -58,53 +74,187 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
     /** @type {qx.ui.virtual.cell.WidgetCell} the used group renderer */
     _groupRenderer: null,
 
+    /** @type {qx.ui.list.column.AbstractColumn[]} the columns for tabular presentation */
+    __columns: null,
+
+    __cellWidgets: null,
+
     /*
     ---------------------------------------------------------------------------
       PUBLIC API
     ---------------------------------------------------------------------------
     */
 
-    // interface implementation
-    getCellWidget(row, column) {
-      var widget = null;
+    /**
+     * Adds a column
+     *
+     * @param column {qx.ui.list.AbstractColumn} the column to add
+     */
+    addColumn(column) {
+      if (this.__columns === null) this.__columns = [];
+      let columnIndex = this.__columns.length;
+      column.setColumnIndex(columnIndex);
+      column.setList(this._list);
+      this.__columns.push(column);
+      let columnConfig = this._list.getPane().getColumnConfig();
+      columnConfig.setItemCount(this.__columns.length);
+      columnConfig.setItemFlex(columnIndex, column.getFlex());
+      column.addListener("change", evt =>
+        this.__onColumnChangeEvent(column, evt)
+      );
 
-      if (!this._list._isGroup(row)) {
-        widget = this._itemRenderer.getCellWidget();
-        widget.setUserData("cell.type", "item");
-        this._bindItem(widget, this._list._lookup(row));
+      this._list
+        .getChildControl("row-layer")
+        .setHasHeader(this.isShowHeaders());
+    },
 
-        if (this._list._manager.isItemSelected(row)) {
-          this._styleSelectabled(widget);
+    /**
+     * Event handler for changes by column widgets
+     */
+    __onColumnChangeEvent(column, evt) {
+      this.fireDataEvent("change", {
+        column,
+        value: evt.getData()
+      });
+    },
+
+    /**
+     * Returns the columns
+     *
+     * @return {qx.ui.list.column.AbstractColumn[]}
+     */
+    getColumns() {
+      return this.__columns;
+    },
+
+    /**
+     * Updates the editability of the columns
+     */
+    updateEditable() {
+      if (this.__columns)
+        this.__columns.forEach(column => column.updateEditable());
+    },
+
+    /**
+     * @Override
+     */
+    getCellSizeHint(rowIndex, columnIndex) {
+      let widget = this.getCellWidget(rowIndex, columnIndex);
+      if (!widget) return null;
+      let hint = widget.getSizeHint();
+      if (!this._list._isGroup(rowIndex)) {
+        let column = null;
+        if (this.__columns !== null) {
+          if (this.__columns.length > columnIndex)
+            column = this.__columns[columnIndex];
+        }
+        if (column) {
+          let maxWidth = column.getMaxWidth();
+          if (maxWidth && (!hint.maxWidth || hint.maxWidth > maxWidth))
+            hint.maxWidth = maxWidth;
+          let minWidth = column.getMinWidth();
+          if (minWidth && (!hint.minWidth || hint.minWidth < minWidth))
+            hint.minWidth = minWidth;
+        }
+      }
+      return hint;
+    },
+
+    /*
+     * @Override
+     */
+    getCellWidget(rowIndex, columnIndex) {
+      let id = rowIndex + "x" + columnIndex;
+      let widget = null;
+
+      if (this.__columns !== null) {
+        if (this.__columns.length <= columnIndex) return null;
+        let column = this.__columns[columnIndex];
+
+        if (rowIndex == 0) {
+          widget = column.getHeaderWidget();
         } else {
-          this._styleUnselectabled(widget);
+          rowIndex--;
+          let model = this._list.getModel();
+          if (!model || model.getLength() <= rowIndex) return null;
+          widget = column.getCellWidget(rowIndex);
         }
       } else {
-        widget = this._groupRenderer.getCellWidget();
-        widget.setUserData("cell.type", "group");
-        this._bindGroupItem(widget, this._list._lookupGroup(row));
+        // We can cache the widget for our own, but do not do this for Columns because they have their own
+        //  caching and need to decide whether to cache or reload for the row/column model
+        widget = this.__cellWidgets[id] || null;
+        if (widget) return widget;
+
+        if (!this._list._isGroup(rowIndex)) {
+          widget = this._itemRenderer.getCellWidget();
+          widget.setUserData("cell.type", "item");
+          this._bindItem(
+            widget,
+            this._list._lookupByRowAndColumn(rowIndex, columnIndex)
+          );
+
+          if (this._list._manager.isItemSelected(rowIndex)) {
+            this._styleSelectabled(widget);
+          } else {
+            this._styleUnselectabled(widget);
+          }
+        } else if (columnIndex == 0) {
+          widget = this._groupRenderer.getCellWidget();
+          widget.setUserData("cell.type", "group");
+          this._bindGroupItem(widget, this._list._lookupGroup(rowIndex));
+        }
       }
+
+      this.__cellWidgets[id] = widget;
 
       return widget;
     },
 
-    // interface implementation
+    /*
+     * @Override
+     */
     poolCellWidget(widget) {
+      let columnIndex = widget.getUserData("cell.column");
+      let rowIndex = widget.getUserData("cell.row");
+      let id = rowIndex + "x" + columnIndex;
       this._removeBindingsFrom(widget);
+      delete this.__cellWidgets[id];
 
-      if (widget.getUserData("cell.type") == "item") {
-        this._itemRenderer.pool(widget);
-      } else if (widget.getUserData("cell.type") == "group") {
+      if (widget.getUserData("cell.type") == "group") {
         this._groupRenderer.pool(widget);
+        this._onPool(widget);
+      } else {
+        if (this.__columns !== null) {
+          let column = this.__columns[columnIndex];
+
+          if (rowIndex == 0) column.poolHeaderWidget(widget);
+          else column.poolCellWidget(widget);
+        } else {
+          this._itemRenderer.pool(widget);
+          this._onPool(widget);
+        }
       }
-      this._onPool(widget);
     },
 
-    // interface implementation
+    /*
+     * @Override
+     */
     createLayer() {
       return new qx.ui.virtual.layer.WidgetCell(this);
     },
 
-    // interface implementation
+    /*
+     * @Override
+     */
+    _applyShowHeaders(value) {
+      this._list
+        .getChildControl("row-layer")
+        .setHasHeader(this.__columns !== null && value);
+    },
+
+    /*
+     * @Override
+     */
     createItemRenderer() {
       var createWidget = qx.util.Delegate.getMethod(
         this.getDelegate(),
@@ -117,15 +267,18 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
         };
       }
 
-      var renderer = new qx.ui.virtual.cell.WidgetCell();
-      renderer.setDelegate({
-        createWidget: createWidget
+      var renderer = new qx.ui.virtual.cell.WidgetCell().set({
+        delegate: {
+          createWidget: createWidget
+        }
       });
 
       return renderer;
     },
 
-    // interface implementation
+    /*
+     * @Override
+     */
     createGroupRenderer() {
       var createWidget = qx.util.Delegate.getMethod(
         this.getDelegate(),
@@ -141,39 +294,50 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
         };
       }
 
-      var renderer = new qx.ui.virtual.cell.WidgetCell();
-      renderer.setDelegate({
-        createWidget: createWidget
+      var renderer = new qx.ui.virtual.cell.WidgetCell().set({
+        delegate: {
+          createWidget: createWidget
+        }
       });
 
       return renderer;
     },
 
-    // interface implementation
-    styleSelectabled(row) {
-      var widget = this.__getWidgetFrom(row);
-      this._styleSelectabled(widget);
+    /*
+     * @Override
+     */
+    styleSelectabled(item) {
+      if (this.__columns !== null) {
+        let rowLayer = this._list.getChildControl("row-layer");
+        rowLayer.setSelected(item.row, true);
+      } else {
+        var widget = this.__getWidgetFrom(item);
+        this._styleSelectabled(widget);
+      }
     },
 
-    // interface implementation
-    styleUnselectabled(row) {
-      var widget = this.__getWidgetFrom(row);
-      this._styleUnselectabled(widget);
+    /*
+     * @Override
+     */
+    styleUnselectabled(item) {
+      if (this.__columns !== null) {
+        let rowLayer = this._list.getChildControl("row-layer");
+        rowLayer.setSelected(item.row, false);
+      } else {
+        var widget = this.__getWidgetFrom(item);
+        this._styleUnselectabled(widget);
+      }
     },
 
-    // interface implementation
-    isSelectable(row) {
-      if (this._list._isGroup(row)) {
+    /*
+     * @Override
+     */
+    isSelectable(cell) {
+      if (this._list._isGroup(cell.row)) {
         return false;
       }
 
-      var widget = this._list._layer.getRenderedCellWidget(row, 0);
-
-      if (widget != null) {
-        return widget.isEnabled();
-      } else {
-        return true;
-      }
+      return true;
     },
 
     /*
@@ -270,11 +434,11 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
     /**
      * Helper method to get the widget from the passed row.
      *
-     * @param row {Integer} row to search.
+     * @param cell {Map} containing `row` and `column`
      * @return {qx.ui.core.Widget|null} The found widget or <code>null</code> when no widget found.
      */
-    __getWidgetFrom(row) {
-      return this._list._layer.getRenderedCellWidget(row, 0);
+    __getWidgetFrom(cell) {
+      return this._list._layer.getRenderedCellWidget(cell.row, cell.column);
     },
 
     /**

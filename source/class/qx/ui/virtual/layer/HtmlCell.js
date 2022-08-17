@@ -73,18 +73,16 @@ qx.Class.define("qx.ui.virtual.layer.HtmlCell", {
     },
 
     // overridden
-    _fullUpdate(firstRow, firstColumn, rowSizes, columnSizes) {
+    _fullUpdate(firstRow, firstColumn) {
+      let rowSizes = this.getPane().getRowSizes();
+      let columnSizes = this.getPane().getColumnSizes();
       var html = [];
-      var left = 0;
-      var top = 0;
       var row = firstRow;
-      var column = firstColumn;
+
       for (var y = 0; y < rowSizes.length; y++) {
-        var left = 0;
         var column = firstColumn;
-        var height = rowSizes[y];
+
         for (var x = 0; x < columnSizes.length; x++) {
-          var width = columnSizes[x];
           var cellProperties = this._cellProvider.getCellProperties(
             row,
             column
@@ -96,12 +94,18 @@ qx.Class.define("qx.ui.virtual.layer.HtmlCell", {
             "<div ",
             "style='",
             "left:",
-            left,
+            columnSizes[x].left,
             "px;",
             "top:",
-            top,
+            rowSizes[y].top,
             "px;",
-            this._getCellSizeStyle(width, height, insets[0], insets[1]),
+            this._getCellSizeStyle(
+              columnSizes[x].width,
+              rowSizes[y].height,
+              insets[0],
+              insets[1]
+            ),
+
             cellProperties.style || "",
             "' ",
             "class='",
@@ -114,9 +118,7 @@ qx.Class.define("qx.ui.virtual.layer.HtmlCell", {
           );
 
           column++;
-          left += width;
         }
-        top += height;
         row++;
       }
 

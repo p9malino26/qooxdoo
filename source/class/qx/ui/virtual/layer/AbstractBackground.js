@@ -22,72 +22,71 @@
 qx.Class.define("qx.ui.virtual.layer.AbstractBackground", {
   extend: qx.ui.virtual.layer.Abstract,
 
-  /*
-   *****************************************************************************
-      CONSTRUCTOR
-   *****************************************************************************
-   */
-
-  /**
-   * @param colorEven {Color?null} color for even indexes
-   * @param colorOdd {Color?null} color for odd indexes
-   */
-  construct(colorEven, colorOdd) {
+  construct() {
     super();
-
-    if (colorEven) {
-      this.setColorEven(colorEven);
-    }
-
-    if (colorOdd) {
-      this.setColorOdd(colorOdd);
-    }
-
-    this.__customColors = {};
-    this.__decorators = {};
+    this._setLayout(new qx.ui.layout.Basic());
   },
-
-  /*
-  *****************************************************************************
-     PROPERTIES
-  *****************************************************************************
-  */
 
   properties: {
-    /** color for event indexes */
-    colorEven: {
-      nullable: true,
-      check: "Color",
-      apply: "_applyColorEven",
-      themeable: true
+    /** Whether the list has a header */
+    hasHeader: {
+      init: false,
+      check: "Boolean",
+      apply: "_applyHasHeader"
     },
 
-    /** color for odd indexes */
-    colorOdd: {
+    /** Default appearance for spans */
+    spanAppearance: {
+      init: null,
+      check: "String",
       nullable: true,
-      check: "Color",
-      apply: "_applyColorOdd",
-      themeable: true
+      apply: "_applySpanAppearance"
     }
   },
 
-  /*
-  *****************************************************************************
-     MEMBERS
-  *****************************************************************************
-  */
-
   members: {
-    __colorEven: null,
-    __colorOdd: null,
+    /** @type{String[]} colour overrides */
     __customColors: null,
-    __decorators: null,
 
-    /*
-    ---------------------------------------------------------------------------
-      COLOR HANDLING
-    ---------------------------------------------------------------------------
-    */
+    /** @type {Map<Integer, Boolean>} selected rows, indexes by rowIndex */
+    __selectedRows: null,
+
+    /** @type {Map<Integer, String>} appearance name overrides by row, indexed by rowIndex */
+    __spanAppearances: null,
+
+    /**
+     * Sets a row as selected
+     * @param rowIndex {Integer} the zero based row index
+     * @param selected {Boolean} whether selected or not
+     */
+    setSelected(rowIndex, selected) {
+      let wasSelected = this.isSelected(rowIndex);
+      if (selected) {
+        if (!this.__selectedRows) this.__selectedRows = {};
+        this.__selectedRows[rowIndex] = true;
+      } else {
+        if (this.__selectedRows) delete this.__selectedRows[rowIndex];
+      }
+      if (wasSelected != selected) this.updateLayerData();
+    },
+
+    /**
+     * Returns whether a row is selected or not
+     *
+     * @param rowIndex {Integer} zero based row index
+     * @return {Boolean}
+     */
+    isSelected(rowIndex) {
+      if (this.__selectedRows === null) return false;
+      return !!this.__selectedRows[rowIndex];
+    },
+
+    /**
+     * Apply for `spanAppearance`
+     */
+    _applySpanAppearance(value) {
+      this.updateLayerData();
+    },
 
     /**
      * Sets the color for the given index
@@ -120,69 +119,63 @@ qx.Class.define("qx.ui.virtual.layer.AbstractBackground", {
      * @return {Color} The color at the given index
      */
     getColor(index) {
-      var customColor = this.__customColors[index];
-      if (customColor) {
-        return customColor;
-      } else {
-        return index % 2 == 0 ? this.__colorEven : this.__colorOdd;
-      }
+      return this.__customColors[index] || null;
     },
 
-    // property apply
-    _applyColorEven(value, old) {
-      if (value) {
-        this.__colorEven = qx.theme.manager.Color.getInstance().resolve(value);
-      } else {
-        this.__colorEven = null;
-      }
-      this.updateLayerData();
-    },
-
-    // property apply
-    _applyColorOdd(value, old) {
-      if (value) {
-        this.__colorOdd = qx.theme.manager.Color.getInstance().resolve(value);
-      } else {
-        this.__colorOdd = null;
-      }
+    /**
+     * Apply for `hasHeader`
+     */
+    _applyHasHeader() {
       this.updateLayerData();
     },
 
     /**
-     * Sets the decorator for the given index
+     * Sets the appearance for the given index
      *
      * @param index {Integer} Index to set the color for
-     * @param decorator {qx.ui.decoration.IDecorator|null} the decorator to set. A value of
-     *    <code>null</code> will reset the decorator.
+     * @param appearance {String} the appearance to set. A value of
+     *    <code>null</code> will reset the appearance.
      */
-    setBackground(index, decorator) {
-      if (decorator) {
-        this.__decorators[index] =
-          qx.theme.manager.Decoration.getInstance().resolve(decorator);
-      } else {
-        delete this.__decorators[index];
+    setIndividualSpanAppearance(index, appearance) {
+      if (appearance) {
+        if (!this.__spanAppearances) this.__spanAppearances = {};
+        this.__spanAppearances[index] = appearance;
+      } else if (this.__spanAppearances) {
+        delete this.__spanAppearances[index];
       }
       this.updateLayerData();
     },
 
     /**
-     * Get the decorator at the given index
+     * Get the appearance which has been manually set at the given index
      *
-     * @param index {Integer} The index to get the decorator for.
-     * @return {qx.ui.decoration.IDecorator} The decorator at the given index
+     * @param index {Integer} The index to get the appearance for.
+     * @return {String} The appearance at the given index
      */
-    getBackground(index) {
-      return this.__decorators[index];
+    getIndividualSpanAppearance(index) {
+      return (this.__spanAppearances && this.__spanAppearances[index]) || null;
+    },
+
+    /**
+     * Get the appearance to use at the given index
+     *
+     * @param index {Integer} The index to get the appearance for.
+     * @return {String?} The appearance at the given index, null if default is to be used
+     */
+    getSpanAppearanceFor(index) {
+      if (this.isHasHeader()) {
+        if (index == 0) return null;
+        index--;
+      }
+      return (
+        (this.__spanAppearances && this.__spanAppearances[index]) ||
+        this.getSpanAppearance() ||
+        null
+      );
     }
   },
 
-  /*
-   *****************************************************************************
-      DESTRUCT
-   *****************************************************************************
-   */
-
   destruct() {
-    this.__customColors = this.__decorators = null;
+    this.__customColors = this.__spanAppearances = null;
   }
 });
