@@ -289,6 +289,7 @@ qx.Class.define("qx.ui.layout.Canvas", {
                 top = Math.round(
                   (availHeight - size.height) / 2 - marginBottom
                 );
+
                 break;
               case "bottom":
                 bottom = 0;
