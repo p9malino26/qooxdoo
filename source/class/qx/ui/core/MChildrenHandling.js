@@ -182,7 +182,9 @@ qx.Mixin.define("qx.ui.core.MChildrenHandling", {
      */
     remap(members) {
       if (qx.core.Environment.get("qx.debug")) {
-        qx.log.Logger.debug("Calling qx.ui.core.MChildrenHandling.remap is deprecated, please dont use it");
+        qx.log.Logger.debug(
+          "Calling qx.ui.core.MChildrenHandling.remap is deprecated, please dont use it"
+        );
       }
       members.getChildren = members._getChildren;
       members.hasChildren = members._hasChildren;

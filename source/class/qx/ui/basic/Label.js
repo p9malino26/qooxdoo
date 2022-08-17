@@ -462,10 +462,10 @@ qx.Class.define("qx.ui.basic.Label", {
 
     // property apply
     _applyBreakWithinWords(value, old) {
-        this.getContentElement().setStyle(
-          "wordBreak",
+      this.getContentElement().setStyle(
+        "wordBreak",
         this.isRich() && value ? "break-all" : "normal"
-        );
+      );
     },
 
     /**

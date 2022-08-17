@@ -442,7 +442,7 @@ qx.Class.define("qx.tool.compiler.targets.Target", {
         bootPackage.addJavascriptMeta(
           new qx.tool.compiler.targets.meta.Browserify(appMeta)
         );
-      }	
+      }
 
       /*
        * Assemble the Parts

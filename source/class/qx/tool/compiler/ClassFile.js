@@ -1687,13 +1687,14 @@ qx.Class.define("qx.tool.compiler.ClassFile", {
                     t.addMarker(
                       "compiler.requireLiteralArguments",
                       path.node.loc,
-                        arg.value
+                      arg.value
                     );
                   } else {
                     qx.tool.compiler.Console.log(
                       `${t.__className}:${path.node.loc.start.line}:` +
                         ` automatically detected \'require(${arg.value})\``
                     );
+
                     t.addCommonjsModule(
                       arg.value,
                       t.__className,
