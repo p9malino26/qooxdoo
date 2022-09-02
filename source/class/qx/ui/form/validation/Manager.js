@@ -483,7 +483,14 @@ qx.Class.define("qx.ui.form.validation.Manager", {
             }
 
             let msg = item.getInvalidMessage();
-            if (qx.core.Environment.get("qx.debug")) {
+            if (
+              !msg &&
+              qx.core.Environment.get(
+                "qx.ui.form.validation.Manager.allowDefaultInvalidMessage"
+              )
+            ) {
+              msg = "Invalid field";
+            } else if (qx.core.Environment.get("qx.debug")) {
               this.assertTrue(msg != null && msg.length > 0);
             }
             tooltip.setLabel(msg);
@@ -536,16 +543,31 @@ qx.Class.define("qx.ui.form.validation.Manager", {
         var formItem = this.__formItems[i].item;
         if (!formItem.getValid()) {
           let msg = formItem.getInvalidMessage();
-          if (qx.core.Environment.get("qx.debug")) {
+          if (
+            !msg &&
+            qx.core.Environment.get(
+              "qx.ui.form.validation.Manager.allowDefaultInvalidMessage"
+            )
+          ) {
+            msg = "Invalid field";
+          } else if (qx.core.Environment.get("qx.debug")) {
             this.assertTrue(msg !== null && msg.length > 0);
           }
           messages.push(msg);
         }
       }
+
       // add the forms fail message
       if (!this.isValid()) {
         let msg = this.getInvalidMessage();
-        if (qx.core.Environment.get("qx.debug")) {
+        if (
+          !msg &&
+          qx.core.Environment.get(
+            "qx.ui.form.validation.Manager.allowDefaultInvalidMessage"
+          )
+        ) {
+          msg = "Invalid field";
+        } else if (qx.core.Environment.get("qx.debug")) {
           this.assertTrue(msg !== null && msg.length > 0);
         }
         messages.push(msg);
@@ -655,5 +677,11 @@ qx.Class.define("qx.ui.form.validation.Manager", {
   destruct() {
     this._showToolTip(true);
     this.__formItems = null;
+  },
+
+  environment: {
+    // Whether to assume a default "Invalid Field" message for invalid fields; if false, an
+    //  exception will be raised if invalid fields do not have an `invalidMessage`
+    "qx.ui.form.validation.Manager.allowDefaultInvalidMessage": true
   }
 });
