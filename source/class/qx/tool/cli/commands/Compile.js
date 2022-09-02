@@ -141,6 +141,13 @@ qx.Class.define("qx.tool.cli.commands.Compile", {
         type: "boolean"
       },
 
+      browserify: {
+        describe:
+          "Whether to browserify require'd modules for browser applications",
+        default: true,
+        type: "boolean"
+      },
+
       "save-source-in-map": {
         describe: "Saves the source code in the map file (build target only)",
         type: "boolean",
@@ -1004,6 +1011,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
         target.setWriteLibraryInfo(this.argv.writeLibraryInfo);
         target.setUpdatePoFiles(this.argv.updatePoFiles);
         target.setLibraryPoPolicy(this.argv.libraryPo);
+        target.setBrowserify(this.argv.browserify);
 
         // Take the command line for `minify` as most precedent only if provided
         var minify;

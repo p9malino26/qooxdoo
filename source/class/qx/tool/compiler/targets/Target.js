@@ -168,6 +168,15 @@ qx.Class.define("qx.tool.compiler.targets.Target", {
     },
 
     /**
+     * Whether to support browserify for browser targets
+     */
+    browserify: {
+      init: true,
+      nullable: false,
+      check: "Boolean"
+    },
+
+    /**
      * Whether to use relative paths in source maps
      */
     sourceMapRelativePaths: {
@@ -437,7 +446,9 @@ qx.Class.define("qx.tool.compiler.targets.Target", {
       // application in compile.json, but will not bundle `require()`d
       // modules that are Node modules.
       if (
-        appMeta.getEnvironmentValue("qx.compiler.applicationType") == "browser"
+        appMeta.getEnvironmentValue("qx.compiler.applicationType") ==
+          "browser" &&
+        this.isBrowserify()
       ) {
         bootPackage.addJavascriptMeta(
           new qx.tool.compiler.targets.meta.Browserify(appMeta)
