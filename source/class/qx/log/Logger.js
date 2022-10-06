@@ -500,6 +500,9 @@ qx.Bootstrap.define("qx.log.Logger", {
         if (object.classname) {
           return object.classname;
         }
+        if (object.$$type === "Mixin") {
+          return object.name;
+        }
         if (typeof object == "string") {
           return object;
         }
