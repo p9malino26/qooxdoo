@@ -94,7 +94,9 @@ qx.Class.define("qx.tool.utils.Json", {
         msg = ajv.errors
           .reduce(
             (prev, curr, index) =>
-              `${prev} ${index + 1}) ${curr.dataPath} ${curr.message}`,
+              `${prev} ${index + 1}) ${curr.dataPath || curr.schemaPath} ${
+                curr.message
+              }`,
             ""
           )
           .trim();
