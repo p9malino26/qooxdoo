@@ -3104,6 +3104,7 @@ qx.Class.define("qx.tool.compiler.ClassFile", {
 
     NODE_GLOBALS: [
       "Module",
+      "Buffer",
       "require",
       "module",
       "process",
