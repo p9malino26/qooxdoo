@@ -1063,14 +1063,13 @@ qx.Class.define("qx.test.core.Property", {
     },
 
     testPromises() {
-      const promiseDelay = (delay, fn) => {
-        return new qx.Promise(resolve => {
+      const promiseDelay = (delay, fn) =>
+        new qx.Promise(resolve => {
           setTimeout(async () => {
             await fn();
             resolve();
           }, delay);
         });
-      };
 
       qx.Class.define("qxl.TestPromises", {
         extend: qx.core.Object,

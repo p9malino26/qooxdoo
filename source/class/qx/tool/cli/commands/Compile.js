@@ -351,7 +351,6 @@ qx.Class.define("qx.tool.cli.commands.Compile", {
   members: {
     __gauge: null,
     __makers: null,
-    __config: null,
     __libraries: null,
     __outputDirWasCreated: false,
 
@@ -539,13 +538,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
      * @return {Boolean} true if all makers succeeded
      */
     async _loadConfigAndStartMaking() {
-      var config = (this.__config =
-        await qx.tool.cli.Cli.getInstance().getParsedArgs());
-      if (!config) {
-        throw new qx.tool.utils.Utils.UserError(
-          "Error: Cannot find any configuration"
-        );
-      }
+      var config = this.getCompilerApi().getConfiguration();
       var makers = (this.__makers = await this.createMakersFromConfig(config));
       if (!makers || !makers.length) {
         throw new qx.tool.utils.Utils.UserError(
@@ -757,7 +750,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
       let targetConfigs = [];
       let defaultTargetConfig = null;
       data.targets.forEach(targetConfig => {
-        if (targetConfig.type === data.targetType) {
+        if (targetConfig.type === this.getTargetType()) {
           if (
             !targetConfig["application-names"] &&
             !targetConfig["application-types"]
@@ -1239,8 +1232,14 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
           if (appConfig.description) {
             app.setDescription(appConfig.description);
           }
+          appConfig.localModules = appConfig.localModules || {};
+          qx.lang.Object.mergeWith(
+            appConfig.localModules,
+            data.localModules || {},
+            false
+          );
 
-          if (appConfig.localModules) {
+          if (!qx.lang.Object.isEmpty(appConfig.localModules)) {
             app.setLocalModules(appConfig.localModules);
           }
 
@@ -1584,13 +1583,6 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
         let res = maker.getApplications().find(app => app.getName() == appName);
         return res;
       });
-    },
-
-    /**
-     * Returns the configuration object being compiled
-     */
-    _getConfig() {
-      return this.__config;
     },
 
     /**
