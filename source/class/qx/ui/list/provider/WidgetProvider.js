@@ -310,10 +310,9 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
       if (this.__columns !== null) {
         let rowLayer = this._list.getChildControl("row-layer");
         rowLayer.setSelected(item.row, true);
-      } else {
-        var widget = this.__getWidgetFrom(item);
-        this._styleSelectabled(widget);
       }
+      var widget = this.__getWidgetFrom(item);
+      if (widget) this._styleSelectabled(widget);
     },
 
     /*
@@ -323,10 +322,9 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
       if (this.__columns !== null) {
         let rowLayer = this._list.getChildControl("row-layer");
         rowLayer.setSelected(item.row, false);
-      } else {
-        var widget = this.__getWidgetFrom(item);
-        this._styleUnselectabled(widget);
       }
+      var widget = this.__getWidgetFrom(item);
+      if (widget) this._styleUnselectabled(widget);
     },
 
     /*
