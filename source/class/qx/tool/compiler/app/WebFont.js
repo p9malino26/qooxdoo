@@ -249,43 +249,48 @@ qx.Class.define("qx.tool.compiler.app.WebFont", {
           // to name their icons. This code extracts the ligatures
           // hat tip to Jossef Harush https://stackoverflow.com/questions/54721774/extracting-ttf-font-ligature-mappings/54728584
           let ligatureName = {};
-          let lookupList = font.GSUB.lookupList.toArray();
+          let lookupList = font.GSUB.lookupList?.toArray();
           let lookupListIndexes =
+            font.GSUB.featureList?.length &&
             font.GSUB.featureList[0].feature.lookupListIndexes;
-          lookupListIndexes.forEach(index => {
-            let subTable = lookupList[index].subTables[0];
-            let leadingCharacters = [];
-            if (subTable.coverage.rangeRecords) {
-              subTable.coverage.rangeRecords.forEach(coverage => {
-                for (let i = coverage.start; i <= coverage.end; i++) {
-                  let character = font.stringsForGlyph(i)[0];
-                  leadingCharacters.push(character);
-                }
-              });
-            }
-            let ligatureSets = subTable.ligatureSets.toArray();
-            ligatureSets.forEach((ligatureSet, ligatureSetIndex) => {
-              let leadingCharacter = leadingCharacters[ligatureSetIndex];
-              ligatureSet.forEach(ligature => {
-                let character = font.stringsForGlyph(ligature.glyph)[0];
-                if (!character) {
-                  // qx.tool.compiler.Console.log(`WARN: ${this.getName()} no character ${ligature}`);
-                  return;
-                }
-                let ligatureText =
-                  leadingCharacter +
-                  ligature.components
-                    .map(x => font.stringsForGlyph(x)[0])
-                    .join("");
-                var hexId = character.charCodeAt(0).toString(16);
-                if (ligatureName[hexId] == undefined) {
-                  ligatureName[hexId] = [ligatureText];
-                } else {
-                  ligatureName[hexId].push(ligatureText);
-                }
-              });
+          if (lookupListIndexes && lookupList) {
+            lookupListIndexes.forEach(index => {
+              let subTable = lookupList[index].subTables[0];
+              let leadingCharacters = [];
+              if (subTable.coverage?.rangeRecords) {
+                subTable.coverage.rangeRecords.forEach(coverage => {
+                  for (let i = coverage.start; i <= coverage.end; i++) {
+                    let character = font.stringsForGlyph(i)[0];
+                    leadingCharacters.push(character);
+                  }
+                });
+              }
+              let ligatureSets = subTable.ligatureSets?.toArray();
+              if (ligatureSets) {
+                ligatureSets.forEach((ligatureSet, ligatureSetIndex) => {
+                  let leadingCharacter = leadingCharacters[ligatureSetIndex];
+                  ligatureSet.forEach(ligature => {
+                    let character = font.stringsForGlyph(ligature.glyph)[0];
+                    if (!character) {
+                      // qx.tool.compiler.Console.log(`WARN: ${this.getName()} no character ${ligature}`);
+                      return;
+                    }
+                    let ligatureText =
+                      leadingCharacter +
+                      ligature.components
+                        .map(x => font.stringsForGlyph(x)[0])
+                        .join("");
+                    var hexId = character.charCodeAt(0).toString(16);
+                    if (ligatureName[hexId] == undefined) {
+                      ligatureName[hexId] = [ligatureText];
+                    } else {
+                      ligatureName[hexId].push(ligatureText);
+                    }
+                  });
+                });
+              }
             });
-          });
+          }
 
           let defaultSize = this.getDefaultSize();
           font.characterSet.forEach(codePoint => {
