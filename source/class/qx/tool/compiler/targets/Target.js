@@ -562,7 +562,7 @@ qx.Class.define("qx.tool.compiler.targets.Target", {
             // check if font is asset somewhere
             let res = font.getResources().filter(res => assets[res]);
             if (res.length === 0) {
-              qx.tool.compiler.Console.print(
+              qx.tool.compiler.Console.trace(
                 "qx.tool.compiler.webfonts.noResources",
                 font.toString(),
                 application.getName(),
