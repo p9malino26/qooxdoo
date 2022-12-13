@@ -954,22 +954,30 @@ qx.Class.define("qx.Promise", {
      * @param e {NativeEvent}
      */
     __onUnhandledRejection(e) {
-      if (qx.lang.Type.isFunction(e.preventDefault)) {
-        e.preventDefault();
-      }
       var reason = null;
-      if (e instanceof Error) {
-        reason = e;
-      } else if (e.reason instanceof Error) {
-        reason = e.reason;
-      } else if (e.detail && e.detail.reason instanceof Error) {
-        reason = e.detail.reason;
+      if (e) {
+        if (qx.lang.Type.isFunction(e.preventDefault)) {
+          e.preventDefault();
+        }
+        if (e instanceof Error) {
+          reason = e;
+        } else if (e.reason instanceof Error) {
+          reason = e.reason;
+        } else if (e.detail && e.detail.reason instanceof Error) {
+          reason = e.detail.reason;
+        }
+        qx.log.Logger.error(
+          this,
+          "Unhandled promise rejection: " +
+            (reason ? reason.stack : "(not from exception)")
+        );
+      } else {
+        reason = new Error("Unhandled promise rejection");
+        qx.log.Logger.error(
+          this,
+          "Unhandled promise rejection (with no error)"
+        );
       }
-      qx.log.Logger.error(
-        this,
-        "Unhandled promise rejection: " +
-          (reason ? reason.stack : "(not from exception)")
-      );
 
       qx.event.GlobalError.handleError(reason);
     },
