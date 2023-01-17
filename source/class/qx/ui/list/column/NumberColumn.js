@@ -31,6 +31,15 @@ qx.Class.define("qx.ui.list.column.NumberColumn", {
     },
 
     /**
+     * @override
+     */
+    _compareValueForSort(a, b) {
+      a = a || 0;
+      b = b || 0;
+      return a == b ? 0 : a < b ? -1 : 1;
+    },
+
+    /**
      * @Override
      */
     _getModelBindingOptions(widget, model) {

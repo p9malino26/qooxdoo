@@ -64,7 +64,10 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
 
   events: {
     /** Fired when properties of the model change */
-    change: "qx.event.type.Data"
+    change: "qx.event.type.Data",
+
+    /** Fired when the data needs to be sorted, the data is the Column */
+    sortByColumn: "qx.event.type.Data"
   },
 
   members: {
@@ -101,6 +104,10 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
       columnConfig.setItemFlex(columnIndex, column.getFlex());
       column.addListener("change", evt =>
         this.__onColumnChangeEvent(column, evt)
+      );
+
+      column.addListener("headerTap", evt =>
+        this.fireDataEvent("sortByColumn", column)
       );
 
       this._list
@@ -176,14 +183,18 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
         } else {
           rowIndex--;
           let model = this._list.getModel();
-          if (!model || model.getLength() <= rowIndex) return null;
+          if (!model || model.getLength() <= rowIndex) {
+            return null;
+          }
           widget = column.getCellWidget(rowIndex);
         }
       } else {
         // We can cache the widget for our own, but do not do this for Columns because they have their own
         //  caching and need to decide whether to cache or reload for the row/column model
         widget = this.__cellWidgets[id] || null;
-        if (widget) return widget;
+        if (widget) {
+          return widget;
+        }
 
         if (!this._list._isGroup(rowIndex)) {
           widget = this._itemRenderer.getCellWidget();
@@ -227,8 +238,11 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
         if (this.__columns !== null) {
           let column = this.__columns[columnIndex];
 
-          if (rowIndex == 0) column.poolHeaderWidget(widget);
-          else column.poolCellWidget(widget);
+          if (rowIndex == 0) {
+            column.poolHeaderWidget(widget);
+          } else {
+            column.poolCellWidget(widget);
+          }
         } else {
           this._itemRenderer.pool(widget);
           this._onPool(widget);
@@ -310,9 +324,26 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
       if (this.__columns !== null) {
         let rowLayer = this._list.getChildControl("row-layer");
         rowLayer.setSelected(item.row, true);
+        for (
+          let columnIndex = 0;
+          columnIndex < this.__columns.length;
+          columnIndex++
+        ) {
+          let widget = this.__getWidgetFrom({
+            row: item.row,
+            column: columnIndex
+          });
+
+          if (widget) {
+            this._styleSelectabled(widget);
+          }
+        }
+      } else {
+        let widget = this.__getWidgetFrom(item);
+        if (widget) {
+          this._styleSelectabled(widget);
+        }
       }
-      var widget = this.__getWidgetFrom(item);
-      if (widget) this._styleSelectabled(widget);
     },
 
     /*
@@ -322,15 +353,35 @@ qx.Class.define("qx.ui.list.provider.WidgetProvider", {
       if (this.__columns !== null) {
         let rowLayer = this._list.getChildControl("row-layer");
         rowLayer.setSelected(item.row, false);
+        for (
+          let columnIndex = 0;
+          columnIndex < this.__columns.length;
+          columnIndex++
+        ) {
+          let widget = this.__getWidgetFrom({
+            row: item.row,
+            column: columnIndex
+          });
+
+          if (widget) {
+            this._styleUnselectabled(widget);
+          }
+        }
+      } else {
+        let widget = this.__getWidgetFrom(item);
+        if (widget) {
+          this._styleUnselectabled(widget);
+        }
       }
-      var widget = this.__getWidgetFrom(item);
-      if (widget) this._styleUnselectabled(widget);
     },
 
     /*
      * @Override
      */
     isSelectable(cell) {
+      if (this.isShowHeaders() && cell.row == 0) {
+        return false;
+      }
       if (this._list._isGroup(cell.row)) {
         return false;
       }

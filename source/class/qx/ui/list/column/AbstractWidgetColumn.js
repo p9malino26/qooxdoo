@@ -74,6 +74,30 @@ qx.Class.define("qx.ui.list.column.AbstractWidgetColumn", {
     },
 
     /**
+     * @override
+     */
+    compareForSort(a, b) {
+      let path = this.getPath();
+      let upname = qx.lang.String.firstUp(path);
+      let aValue = a ? a["get" + upname]() : null;
+      let bValue = b ? b["get" + upname]() : null;
+      return this._compareValueForSort(aValue, bValue, a, b);
+    },
+
+    /**
+     * Called to sort
+     *
+     * @param {*} aValue the value in the model looked up by path
+     * @param {*} bValue the value in the model looked up by path
+     * @param {*} aModel the model to compare
+     * @param {*} bModel the model to compare
+     * @returns
+     */
+    _compareValueForSort(aValue, bValue, a, b) {
+      return 0;
+    },
+
+    /**
      * Returns the options for binding to the model, same as the `qx.data.SingleValueBinding.bind`
      * options parameter
      *

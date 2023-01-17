@@ -62,12 +62,23 @@ qx.Class.define("qx.ui.virtual.layer.AbstractBackground", {
     setSelected(rowIndex, selected) {
       let wasSelected = this.isSelected(rowIndex);
       if (selected) {
-        if (!this.__selectedRows) this.__selectedRows = {};
+        if (!this.__selectedRows) {
+          this.__selectedRows = {};
+        }
         this.__selectedRows[rowIndex] = true;
       } else {
-        if (this.__selectedRows) delete this.__selectedRows[rowIndex];
+        if (this.__selectedRows) {
+          delete this.__selectedRows[rowIndex];
+        }
       }
-      if (wasSelected != selected) this.updateLayerData();
+      if (wasSelected != selected) {
+        this._updateRowSelected(rowIndex, selected);
+        this.updateLayerData();
+      }
+    },
+
+    _updateRowSelected(rowIndex, selected) {
+      // Nothing
     },
 
     /**

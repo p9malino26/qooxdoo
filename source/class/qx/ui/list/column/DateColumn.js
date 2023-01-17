@@ -28,6 +28,15 @@ qx.Class.define("qx.ui.list.column.DateColumn", {
      */
     _createCellWidget(row) {
       return new qx.ui.form.DateField();
+    },
+
+    /**
+     * @override
+     */
+    _compareValueForSort(a, b) {
+      a = a ? a.getTime() : 0;
+      b = b ? b.getTime() : 0;
+      return a == b ? 0 : a < b ? -1 : 1;
     }
   }
 });

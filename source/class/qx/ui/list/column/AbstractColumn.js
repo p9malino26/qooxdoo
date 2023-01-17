@@ -85,7 +85,8 @@ qx.Class.define("qx.ui.list.column.AbstractColumn", {
   },
 
   events: {
-    change: "qx.event.type.Data"
+    change: "qx.event.type.Data",
+    headerTap: "qx.event.type.Event"
   },
 
   members: {
@@ -109,7 +110,10 @@ qx.Class.define("qx.ui.list.column.AbstractColumn", {
      */
     getModelForRow(rowIndex) {
       let arr = this.getList().getModel();
-      if (!arr || arr.getLength() <= rowIndex) return null;
+      if (!arr || arr.getLength() <= rowIndex) {
+        return null;
+      }
+      rowIndex = this.getList()._lookup(rowIndex);
       return arr.getItem(rowIndex);
     },
 
@@ -135,6 +139,8 @@ qx.Class.define("qx.ui.list.column.AbstractColumn", {
             allowGrowY: true
           })
         );
+
+        widget.addListener("tap", this._onHeaderTap, this);
       }
       return widget;
     },
@@ -146,6 +152,24 @@ qx.Class.define("qx.ui.list.column.AbstractColumn", {
      */
     poolHeaderWidget(widget) {
       // Nothing
+    },
+
+    /**
+     * Event handler for clicks on the header cells
+     */
+    _onHeaderTap() {
+      this.fireEvent("headerTap");
+    },
+
+    /**
+     * Called to do sort comparisons
+     *
+     * @param {*} a
+     * @param {*} b
+     * @returns -1, 0, or 1
+     */
+    compareForSort(a, b) {
+      return 0;
     },
 
     /**

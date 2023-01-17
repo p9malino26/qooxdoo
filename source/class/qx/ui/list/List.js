@@ -225,6 +225,26 @@ qx.Class.define("qx.ui.list.List", {
     },
 
     /**
+     * The column which the data is to be sorted by
+     */
+    sortByColumn: {
+      init: null,
+      nullable: true,
+      check: "qx.ui.list.column.AbstractColumn",
+      event: "changeSortByColumn"
+    },
+
+    /**
+     * Whether the sorting is reversed
+     */
+    sortByReversed: {
+      init: false,
+      nullable: false,
+      check: "Boolean",
+      event: "changeSortByReversed"
+    },
+
+    /**
      * Indicates that the list is managing the {@link #groups} automatically.
      */
     autoGrouping: {
@@ -339,6 +359,8 @@ qx.Class.define("qx.ui.list.List", {
      */
     refresh() {
       this.__buildUpLookupTable();
+      this._applyDefaultSelection();
+      this.getPane().fullUpdate();
     },
 
     /** @type {qx.ui.list.AbstractColumn[]} the columns */
@@ -381,6 +403,17 @@ qx.Class.define("qx.ui.list.List", {
       this._provider.addListener("change", evt =>
         this.fireDataEvent("change", evt.getData())
       );
+
+      this._provider.addListener("sortByColumn", evt => {
+        let sortByColumn = this.getSortByColumn();
+        this.setSortByColumn(evt.getData());
+        if (sortByColumn && sortByColumn == evt.getData()) {
+          this.setSortByReversed(!this.isSortByReversed());
+        } else {
+          this.setSortByReversed(false);
+        }
+        this.refresh();
+      });
 
       this.__lookupTable = [];
       this.__lookupTableForGroup = [];
@@ -471,7 +504,9 @@ qx.Class.define("qx.ui.list.List", {
         data = this.getGroups().getItem(this._lookupGroup(cell.row));
       } else {
         let row = cell.row;
-        if (this.getProvider().getShowHeaders()) row--;
+        if (this.getProvider().getShowHeaders()) {
+          row--;
+        }
         data = model.getItem(this._lookupByRowAndColumn(row, cell.column));
       }
 
@@ -836,12 +871,18 @@ qx.Class.define("qx.ui.list.List", {
         return;
       }
 
-      var sorter = qx.util.Delegate.getMethod(this.getDelegate(), "sorter");
-
+      let sorter = qx.util.Delegate.getMethod(this.getDelegate(), "sorter");
+      let sortByColumn = this.getSortByColumn();
+      let sortReversed = this.isSortByReversed() ? -1 : 1;
       if (sorter != null) {
-        // TODO
         this.__lookupTable.sort(function (a, b) {
-          return sorter(model.getItem(a), model.getItem(b));
+          return sorter(model.getItem(a), model.getItem(b)) * sortReversed;
+        });
+      } else if (sortByColumn != null) {
+        this.__lookupTable.sort((a, b) => {
+          a = model.getItem(a[0]);
+          b = model.getItem(b[0]);
+          return sortByColumn.compareForSort(a, b) * sortReversed;
         });
       }
     },

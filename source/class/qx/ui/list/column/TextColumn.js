@@ -28,6 +28,15 @@ qx.Class.define("qx.ui.list.column.TextColumn", {
      */
     _createCellWidget(row) {
       return new qx.ui.form.TextField();
+    },
+
+    /**
+     * @override
+     */
+    _compareValueForSort(a, b) {
+      a = "" + (a || "");
+      b = "" + (b || "");
+      return a == b ? 0 : a < b ? -1 : 1;
     }
   }
 });

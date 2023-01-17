@@ -28,6 +28,15 @@ qx.Class.define("qx.ui.list.column.LabelColumn", {
      */
     _createCellWidget(row) {
       return new qx.ui.basic.Label("").set({ allowGrowX: true });
+    },
+
+    /**
+     * @override
+     */
+    _compareValueForSort(a, b) {
+      a = "" + (a || "");
+      b = "" + (b || "");
+      return a == b ? 0 : a < b ? -1 : 1;
     }
   }
 });

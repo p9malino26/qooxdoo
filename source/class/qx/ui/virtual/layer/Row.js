@@ -74,16 +74,35 @@ qx.Class.define("qx.ui.virtual.layer.Row", {
         });
 
         function setState(name, state) {
-          if (state) child.addState(name);
-          else child.removeState(name);
+          if (state) {
+            child.addState(name);
+          } else {
+            child.removeState(name);
+          }
         }
-        setState("selected", this.isSelected(rowIndex));
+        setState(
+          "selected",
+          (!this.isHasHeader() || rowIndex > 0) && this.isSelected(rowIndex)
+        );
+
         setState("header", this.isHasHeader() && rowIndex == 0);
         let dataRowIndex = this.isHasHeader() ? rowIndex - 1 : rowIndex;
         setState("odd", dataRowIndex % 2 == 0);
       }
 
       this._width = width;
+    },
+
+    _updateRowSelected(rowIndex, selected) {
+      let children = this._getChildren();
+      let child = children[rowIndex];
+      if (child) {
+        if ((!this.isHasHeader() || rowIndex > 0) && selected) {
+          child.addState("selected");
+        } else {
+          child.removeState("selected");
+        }
+      }
     },
 
     /*

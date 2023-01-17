@@ -556,11 +556,11 @@ qx.Class.define("qx.ui.virtual.core.Pane", {
       }
 
       rowData = this.__rowConfig.getItemAtPosition(
-        this.getScrollY() + documentY - paneLocation.top
+        documentY - paneLocation.top
       );
 
       columnData = this.__columnConfig.getItemAtPosition(
-        this.getScrollX() + documentX - paneLocation.left
+        documentX - paneLocation.left
       );
 
       if (!rowData || !columnData) {
