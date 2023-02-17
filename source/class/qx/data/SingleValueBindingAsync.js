@@ -120,12 +120,12 @@ qx.Class.define("qx.data.SingleValueBindingAsync", {
         qx.core.Assert.assertString(targetPropertyChain, "targetPropertyChain");
       }
 
-      let binding = new qx.data.binding.Binding().set({
-        sourcePath: sourcePropertyChain,
-        targetPath: targetPropertyChain,
-        source: sourceObject,
-        target: targetObject
-      });
+      let binding = new qx.data.binding.Binding(
+        sourcePropertyChain,
+        targetPropertyChain,
+        sourceObject,
+        targetObject
+      );
 
       return binding;
     },

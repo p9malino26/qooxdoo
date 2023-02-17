@@ -37,6 +37,17 @@
 qx.Class.define("qx.data.binding.Binding", {
   extend: qx.core.Object,
 
+  construct(sourcePath, targetPath, source, target) {
+    super();
+    const init = async () => {
+      await this.setSourcePath(sourcePath);
+      await this.setTargetPath(targetPath);
+      await this.setSource(source);
+      await this.setTarget();
+    };
+    this.__initPromise = init();
+  },
+
   properties: {
     /** The "value" is the final value obtained from the sourcePath */
     value: {
@@ -82,11 +93,22 @@ qx.Class.define("qx.data.binding.Binding", {
   },
 
   members: {
+    /** @type{Promise} initialisation promise */
+    __initPromise: null,
+
     /** @type{qx.data.binding.ISegment[]?} list of segments of the source path */
     __sourceSegments: null,
 
     /** @type{qx.data.binding.ISegment[]?} list of segments of the target path */
     __targetSegments: null,
+
+    /**
+     * Promises/A+ thenable compliance, this means that you can await the binding for initialisation
+     * https://promisesaplus.com/
+     */
+    then(onFulfilled, onRejected) {
+      return this.__initPromise.then(onFulfilled, onRejected);
+    },
 
     /**
      * Apply for `sourcePath`
