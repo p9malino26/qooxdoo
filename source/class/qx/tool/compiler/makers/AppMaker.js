@@ -165,6 +165,15 @@ qx.Class.define("qx.tool.compiler.makers.AppMaker", {
       this.__applications.forEach(app => app.setAnalyser(analyser));
       await target.open();
 
+      for (let library of analyser.getLibraries()) {
+        let fontsData = library.getFontsData();
+        for (let fontName in fontsData) {
+          let fontData = fontsData[fontName];
+          let font = analyser.getFont(fontName, true);
+          await font.updateFromManifest(fontData, library);
+        }
+      }
+
       if (this.isOutputTypescript()) {
         analyser.getLibraries().forEach(library => {
           var symbols = library.getKnownSymbols();
