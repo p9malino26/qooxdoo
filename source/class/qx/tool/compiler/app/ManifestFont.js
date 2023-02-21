@@ -16,7 +16,8 @@ qx.Class.define("qx.tool.compiler.app.ManifestFont", {
     },
 
     defaultSize: {
-      init: 32,
+      init: null,
+      nullable: true,
       check: "Integer"
     },
 
@@ -117,20 +118,20 @@ qx.Class.define("qx.tool.compiler.app.ManifestFont", {
     getBootstrapCode(target, application, localFonts, sources) {
       let res = "";
       let font = {
-        size: this.getDefaultSize(),
         lineHeight: 1,
         family: this.getFamily() || [this.getName()]
       };
 
+      if (this.getDefaultSize() !== null) {
+        font.size = this.getDefaultSize();
+      }
       if (!localFonts && this.getUrls()) {
         font.urls = this.getUrls();
       } else if (sources) {
-        font.sources = sources.map(source => {
-          return {
-            family: source.family || this.getName(),
-            source: source.paths
-          };
-        });
+        font.sources = sources.map(source => ({
+          family: source.family || this.getName(),
+          source: source.paths
+        }));
       }
       if (this.getComparisonString()) {
         font.comparisonString = this.getComparisonString();
