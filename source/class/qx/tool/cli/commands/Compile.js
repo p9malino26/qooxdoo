@@ -697,7 +697,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
           );
 
           watch.setConfigFilenames(arr);
-          return await watch.start();
+          return watch.start();
         })
       );
     },
