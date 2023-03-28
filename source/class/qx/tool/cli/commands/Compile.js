@@ -1010,8 +1010,9 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
         target.setUpdatePoFiles(this.argv.updatePoFiles);
         target.setLibraryPoPolicy(this.argv.libraryPo);
         target.setBrowserify(this.argv.browserify);
+
         let fontsConfig = targetConfig.fonts || {};
-        let preferLocalFonts = false;
+        let preferLocalFonts = true;
 
         if (this.argv.localFonts !== undefined) {
           preferLocalFonts = this.argv.localFonts;
