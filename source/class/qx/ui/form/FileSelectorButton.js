@@ -139,6 +139,11 @@ qx.Class.define("qx.ui.form.FileSelectorButton", {
       this.__inputObject.setAttribute(attr, value);
     },
 
+    setEnabled(value) {
+      this.__inputObject.setEnabled(value);
+      super.setEnabled(value);
+    },
+
     _createContentElement() {
       let id =
         "qxFileSelector_" +
