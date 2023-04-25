@@ -17,9 +17,8 @@
 ************************************************************************ */
 
 /**
- * This class implements bindings as a first class object, and is proposed as
- * a replacement for SingleValueBinding.  All properties are assumed to be
- * asynchronous.
+ * This class implements bindings as a first class object.  All properties are
+ * assumed to be asynchronous.
  *
  * The Binding has a source, a value, and optional target; the source (and
  * sourcePath) is read and copied into value; the value is copied into the target
