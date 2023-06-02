@@ -127,6 +127,8 @@ qx.Class.define("qx.data.SingleValueBindingAsync", {
         targetObject
       );
 
+      binding.executeImmediate();
+
       return binding;
     },
 

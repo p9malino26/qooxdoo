@@ -95,6 +95,18 @@ qx.Class.define("qx.data.binding.Segment", {
       }
     },
 
+    executeImmediate(value) {
+      let result = this.setValue(value);
+      if (qx.lang.Type.isPromise(result)) {
+        return result;
+      }
+      let nextValue = qx.data.binding.Binding.get(value, this.__path);
+      if (qx.lang.Type.isPromise(nextValue)) {
+        return nextValue;
+      }
+      this.__nextSegment.executeImmediate(nextValue);
+    },
+
     /**
      * Event handler for when the value property changes
      *

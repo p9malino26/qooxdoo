@@ -42,7 +42,7 @@ qx.Class.define("qx.data.binding.Binding", {
       await this.setSourcePath(sourcePath);
       await this.setTargetPath(targetPath);
       await this.setSource(source);
-      await this.setTarget();
+      await this.setTarget(target);
     };
     this.__initPromise = init();
   },
@@ -110,9 +110,25 @@ qx.Class.define("qx.data.binding.Binding", {
     },
 
     /**
+     * Tries to set the value immediately; if any part of the path returns a promise then it will
+     * complete asynchronously, but synchronous operations will happen immediately.  This is to preserve
+     * the behaviour from synchronous binding for backwards compatibility
+     *
+     * @async this may return a promise
+     */
+    executeImmediate() {
+      let source = this.getSource();
+      if (source && this.__sourceSegments && this.__sourceSegments[0]) {
+        return this.__sourceSegments[0].executeImmediate(source);
+      } else {
+        return this.setValue(source);
+      }
+    },
+
+    /**
      * Apply for `sourcePath`
      */
-    async _applySourcePath(value, oldValue) {
+    _applySourcePath(value, oldValue) {
       this.__sourceSegments = this.__parseSegments(
         this.__sourceSegments,
         value,
@@ -121,9 +137,9 @@ qx.Class.define("qx.data.binding.Binding", {
 
       let source = this.getSource();
       if (source && this.__sourceSegments && this.__sourceSegments[0]) {
-        await this.__sourceSegments[0].setValue(source);
+        return this.__sourceSegments[0].setValue(source);
       } else {
-        await this.setValue(source);
+        return this.setValue(source);
       }
     },
 
@@ -244,8 +260,9 @@ qx.Class.define("qx.data.binding.Binding", {
      */
     __storeBinding(binding, object) {
       let bindings = qx.data.binding.Binding.__bindings[object.toHashCode()];
-      if (!bindings)
+      if (!bindings) {
         bindings = qx.data.binding.Binding.__bindings[object.toHashCode()] = {};
+      }
       bindings[binding.toHashCode()] = binding;
     },
 
@@ -258,8 +275,9 @@ qx.Class.define("qx.data.binding.Binding", {
     __removeBinding(binding, object) {
       let bindings = qx.data.binding.Binding.__bindings[object.toHashCode()];
       delete bindings[binding.toHashCode()];
-      if (qx.lang.Object.isEmpty(bindings))
+      if (qx.lang.Object.isEmpty(bindings)) {
         delete qx.data.binding.Binding.__bindings[object.toHashCode()];
+      }
     },
 
     /**
@@ -270,7 +288,9 @@ qx.Class.define("qx.data.binding.Binding", {
      */
     getAllBindingsForObject(object) {
       let bindings = qx.data.binding.Binding.__bindings[object.toHashCode()];
-      if (!bindings) return [];
+      if (!bindings) {
+        return [];
+      }
       return Object.values(bindings);
     },
 
