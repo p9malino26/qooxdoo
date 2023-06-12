@@ -119,7 +119,9 @@ qx.Class.define("qx.data.controller.CheckedList", {
       if (delegate != null && delegate.createItem != null) {
         item = delegate.createItem();
       } else {
-        item = new qx.ui.form.CheckBox();
+        item = new qx.ui.form.CheckBox().set({
+          appearance: "checkedlist-checkbox"
+        });
       }
 
       // if there is a configure method, invoke it

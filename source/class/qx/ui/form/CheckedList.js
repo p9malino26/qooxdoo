@@ -38,6 +38,13 @@ qx.Class.define("qx.ui.form.CheckedList", {
     changeChecked: "qx.event.type.Data"
   },
 
+  properties: {
+    appearance: {
+      refine: true,
+      init: "checkedlist"
+    }
+  },
+
   members: {
     /** @type {Map<String,qx.ui.form.CheckBox>} map of checked items, indexed by hash code */
     __checked: null,
@@ -134,6 +141,7 @@ qx.Class.define("qx.ui.form.CheckedList", {
         this.__onItemChangeCheckedImpl(item);
       }
       item.addListener("changeValue", this.__onItemChangeChecked, this);
+      item.setAppearance("checkedlist-checkbox");
     },
 
     /*
