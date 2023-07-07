@@ -423,6 +423,8 @@ qx.Theme.define("qx.theme.classic.Appearance", {
       }
     },
 
+    checkedlistitem: "checkbox",
+
     radiobutton: {
       alias: "checkbox",
       include: "checkbox",

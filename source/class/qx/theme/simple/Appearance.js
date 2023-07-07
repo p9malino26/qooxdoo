@@ -1136,6 +1136,8 @@ qx.Theme.define("qx.theme.simple.Appearance", {
       }
     },
 
+    checkedlistitem: "checkbox",
+
     /*
     ---------------------------------------------------------------------------
       SPINNER

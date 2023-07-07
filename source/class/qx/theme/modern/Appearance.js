@@ -368,6 +368,8 @@ qx.Theme.define("qx.theme.modern.Appearance", {
       }
     },
 
+    checkedlistitem: "checkbox",
+
     radiobutton: {
       alias: "atom",
 

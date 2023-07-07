@@ -26,6 +26,8 @@
  *
  * The `checked` psuedo property in this `CheckedList` controller relates to the checked
  * property of the UI widget.
+ *
+ * The official item to add to the list is `qx.ui.form.CheckedListItem`
  */
 qx.Class.define("qx.data.controller.CheckedList", {
   extend: qx.data.controller.List,
@@ -119,7 +121,7 @@ qx.Class.define("qx.data.controller.CheckedList", {
       if (delegate != null && delegate.createItem != null) {
         item = delegate.createItem();
       } else {
-        item = new qx.ui.form.CheckBox();
+        item = new qx.ui.form.CheckedListItem();
       }
 
       // if there is a configure method, invoke it
