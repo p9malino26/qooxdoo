@@ -860,6 +860,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
         let qxPath = await qx.tool.config.Utils.getQxPath();
         var library = await qx.tool.compiler.app.Library.createLibrary(qxPath);
         libraries[library.getNamespace()] = library;
+        librariesArray.push(library);
         qxLib = libraries["qx"];
       }
       if (this.argv.verbose) {
