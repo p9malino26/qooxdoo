@@ -929,6 +929,9 @@ qx.Class.define("qx.html.Node", {
           if (qx.core.Environment.get("qx.debug")) {
             qx.core.Assert.assertTrue(!!child);
           }
+          if (typeof child == "string") {
+            child = new qx.html.Text(child);
+          }
           if (child instanceof qx.data.Array || qx.lang.Type.isArray(child)) {
             addImpl(child);
           } else {
@@ -953,6 +956,9 @@ qx.Class.define("qx.html.Node", {
      * @return {qx.html.Element} this object (for chaining support)
      */
     addAt(child, index) {
+      if (typeof child == "string") {
+        child = new qx.html.Text(child);
+      }
       this._addChildImpl(child);
       qx.lang.Array.insertAt(this._children, child, index);
 
