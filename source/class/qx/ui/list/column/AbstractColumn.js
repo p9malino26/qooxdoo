@@ -136,7 +136,8 @@ qx.Class.define("qx.ui.list.column.AbstractColumn", {
             rich: true,
             wrap: true,
             allowGrowX: true,
-            allowGrowY: true
+            allowGrowY: true,
+            appearance: "virtual-list-header-cell-label"
           })
         );
 
