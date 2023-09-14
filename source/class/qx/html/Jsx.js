@@ -114,6 +114,8 @@ qx.Class.define("qx.html.Jsx", {
               addChildren(child);
             } else if (typeof child == "string") {
               element.add(new qx.html.Text(child));
+            } else if (typeof child == "number") {
+              element.add(new qx.html.Text("" + child));
             } else {
               element.add(child);
             }
