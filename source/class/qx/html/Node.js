@@ -931,6 +931,8 @@ qx.Class.define("qx.html.Node", {
           }
           if (typeof child == "string") {
             child = new qx.html.Text(child);
+          } else if (typeof child == "number") {
+            child = new qx.html.Text("" + child);
           }
           if (child instanceof qx.data.Array || qx.lang.Type.isArray(child)) {
             addImpl(child);
@@ -958,6 +960,8 @@ qx.Class.define("qx.html.Node", {
     addAt(child, index) {
       if (typeof child == "string") {
         child = new qx.html.Text(child);
+      } else if (typeof child == "number") {
+        child = new qx.html.Text("" + child);
       }
       this._addChildImpl(child);
       qx.lang.Array.insertAt(this._children, child, index);
