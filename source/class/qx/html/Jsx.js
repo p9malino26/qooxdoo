@@ -43,7 +43,7 @@ qx.Class.define("qx.html.Jsx", {
       var children = qx.lang.Array.fromArguments(arguments, 2);
       var self = this;
       if (typeof tagname === "function") {
-        throw new Error("Custom tags are not supported");
+        return tagname();
       }
       if (tagname == qx.html.Jsx.FRAGMENT) {
         var arr = new qx.data.Array();
