@@ -36,18 +36,13 @@ qx.Class.define("qx.html.Jsx", {
      *
      * Custom tags are supported, the attributes will be passed to the function as a single object. Example;
      * ```jsx
-     * const myElem = <this._createQxJsx name="myElem" />
-     * // ...
-     * _createQxJsx({ name }) {
-     *   let jsx;
-     *   switch (name) {
-     *     case "myElem":
-     *       jsx = <div>My element</div>;
-     *       break;
-     *   // etc.
-     *   }
-     *   return jsx;
-     * }
+     * const CustomTag = (attrs, children) => <div id={attrs.id}>{children}</div>;
+     *
+     * const myElem = (
+     *   <CustomTag id="myId">
+     *     <span>My content</span>
+     *   </CustomTag>
+     * );
      * ```
      *
      * @param tagname {String|Function} the name of the tag
@@ -59,7 +54,7 @@ qx.Class.define("qx.html.Jsx", {
       var children = qx.lang.Array.fromArguments(arguments, 2);
       var self = this;
       if (typeof tagname === "function") {
-        return tagname(attributes);
+        return tagname.call(attributes, children);
       }
       if (tagname == qx.html.Jsx.FRAGMENT) {
         var arr = new qx.data.Array();
