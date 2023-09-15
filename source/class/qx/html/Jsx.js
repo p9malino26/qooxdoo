@@ -54,7 +54,7 @@ qx.Class.define("qx.html.Jsx", {
       var children = qx.lang.Array.fromArguments(arguments, 2);
       var self = this;
       if (typeof tagname === "function") {
-        return tagname.call(attributes, children);
+        return tagname(attributes, children);
       }
       if (tagname == qx.html.Jsx.FRAGMENT) {
         var arr = new qx.data.Array();
