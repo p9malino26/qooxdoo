@@ -34,12 +34,10 @@ qx.Class.define("qx.html.Jsx", {
      * Fragments are supported if the tagname is `qx.html.Jsx.FRAGMENT`; but in this case,
      * an `qx.data.Array` is returned.
      *
-     * Custom tags are supported, the attributes will be passed to the function as a single object.
+     * Custom tags are supported, the attributes will be passed to the function as a single object. Example;
      * ```jsx
      * const myElem = <this._createQxJsx name="myElem" />
-     *
      * // ...
-     *
      * _createQxJsx({ name }) {
      *   let jsx;
      *   switch (name) {
