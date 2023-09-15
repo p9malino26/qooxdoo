@@ -47,6 +47,7 @@ qx.Class.define("qx.html.Jsx", {
      *   // etc.
      *   }
      *   return jsx;
+     * }
      * ```
      *
      * @param tagname {String|Function} the name of the tag
