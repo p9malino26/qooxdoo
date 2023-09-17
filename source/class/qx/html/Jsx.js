@@ -15,9 +15,9 @@
      * John Spackman (https://github.com/johnspackman)
      * Alexander Lopez (https://github.com/alecsgone)
 
-   This class includes work from on https://github.com/alecsgone/jsx-render; at the time of writing, 
+   This class includes work from on https://github.com/alecsgone/jsx-render; at the time of writing,
    the https://github.com/alecsgone/jsx-render repo is available under an MIT license.
-  
+
 ************************************************************************ */
 
 /**
@@ -34,7 +34,18 @@ qx.Class.define("qx.html.Jsx", {
      * Fragments are supported if the tagname is `qx.html.Jsx.FRAGMENT`; but in this case,
      * an `qx.data.Array` is returned.
      *
-     * @param tagname {String} the name of the tag
+     * Custom tags are supported, the attributes will be passed to the function as a single object. Example;
+     * ```jsx
+     * const CustomTag = (attrs, children) => <div id={attrs.id}>{children}</div>;
+     *
+     * const myElem = (
+     *   <CustomTag id="myId">
+     *     <span>My content</span>
+     *   </CustomTag>
+     * );
+     * ```
+     *
+     * @param tagname {String|Function} the name of the tag
      * @param attributes {Map?} map of attribute values
      * @param children {qx.html.Node[]} array of children
      * @return {qx.html.Element|qx.data.Array}
@@ -43,7 +54,7 @@ qx.Class.define("qx.html.Jsx", {
       var children = qx.lang.Array.fromArguments(arguments, 2);
       var self = this;
       if (typeof tagname === "function") {
-        return tagname();
+        return tagname(attributes ?? {}, children);
       }
       if (tagname == qx.html.Jsx.FRAGMENT) {
         var arr = new qx.data.Array();
