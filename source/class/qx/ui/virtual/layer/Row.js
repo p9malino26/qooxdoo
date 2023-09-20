@@ -37,6 +37,9 @@ qx.Class.define("qx.ui.virtual.layer.Row", {
     _fullUpdate(firstRow, firstColumn) {
       let rowSizes = this.getPane().getRowSizes();
       let columnSizes = this.getPane().getColumnSizes();
+      if (!columnSizes || !rowSizes) {
+        return;
+      }
       var width = qx.lang.Array.sum(columnSizes.map(s => s.outerWidth));
 
       let children = this._getChildren();
