@@ -25,8 +25,6 @@ qx.Mixin.define("qx.core.MProperty", {
     /**
      * Sets either multiple properties at once by using a property list or
      * sets one property and its value by the first and second argument.
-     * As a fallback, if no generated property setter could be found, a
-     * handwritten setter will be searched and invoked if available.
      *
      * @param data {Object | String} a map of property values. The key is the name of the property.
      * @param value {var?} the value, only used when <code>data</code> is a string.
@@ -35,50 +33,61 @@ qx.Mixin.define("qx.core.MProperty", {
      * @throws {Error} if a property defined does not exist
      */
     set(data, value) {
-      var setter = qx.core.Property.$$method.set;
-
       if (qx.Bootstrap.isString(data)) {
-        if (!this[setter[data]]) {
-          if (this["set" + qx.Bootstrap.firstUp(data)] != undefined) {
-            this["set" + qx.Bootstrap.firstUp(data)](value);
-            return this;
-          }
-
+        let setterName = "set" + qx.Bootstrap.firstUp(data);
+        if (!this[setterName]) {
           throw new Error(
-            "No such property: " +
-              data +
-              " in " +
-              this.classname +
-              " (" +
-              this +
-              ")"
+            `No such property ${this.classname}.${prop} in ${this}`
+          );
+        }
+        return this[setterName](value);
+      }
+
+      for (var prop in data) {
+        let setterName = "set" + qx.Bootstrap.firstUp(prop);
+        if (!this[setterName]) {
+          throw new Error(
+            `No such property ${this.classname}.${prop} in ${this}`
           );
         }
 
-        return this[setter[data]](value);
-      } else {
-        for (var prop in data) {
-          if (!this[setter[prop]]) {
-            if (this["set" + qx.Bootstrap.firstUp(prop)] != undefined) {
-              this["set" + qx.Bootstrap.firstUp(prop)](data[prop]);
-              continue;
-            }
+        this[setterName](data[prop]);
+      }
 
+      return this;
+    },
+
+    /**
+     * Asychronously sets either multiple properties at once by using a property list or
+     * sets one property and its value by the first and second argument.
+     *
+     * @param data {Object | String} a map of property values. The key is the name of the property.
+     * @param value {var?} the value, only used when <code>data</code> is a string.
+     * @throws {Error} if a property defined does not exist
+     */
+    async setAsync(data, value) {
+      const setValueImpl = async (propName, value) => {
+        let upname = qx.Bootstrap.firstUp(prop);
+        let setterName = "set" + upname + "Async";
+
+        if (!this[setterName]) {
+          setterName = "set" + upname;
+          if (!this[setterName]) {
             throw new Error(
-              "No such property: " +
-                prop +
-                " in " +
-                this.classname +
-                " (" +
-                this +
-                ")"
+              `No such property ${this.classname}.${prop} in ${this}`
             );
           }
-
-          this[setter[prop]](data[prop]);
         }
 
-        return this;
+        await this[setterName](data[prop]);
+      };
+
+      if (qx.Bootstrap.isString(data)) {
+        await setValueImpl(data, value);
+      } else {
+        for (var prop in data) {
+          await setValueImpl(prop, data[prop]);
+        }
       }
     },
 
