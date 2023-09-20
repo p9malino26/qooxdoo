@@ -714,16 +714,12 @@ qx.Bootstrap.define("qx.core.Property", {
       };
 
       var setName = (method.set[name] = "set" + upname);
-      members[setName] = new Function(
-        "this." +
-          setName +
-          ".$$install && this." +
-          setName +
-          ".$$install.call(this);" +
-          "return this." +
-          setName +
-          ".apply(this, arguments);"
-      );
+      let strSetCode = `this.${setName}.$$install && this.${setName}.$$install.call(this); var result = this.${setName}.apply(this, arguments);`;
+      if (qx.core.Environment.get("qx.debug")) {
+        strSetCode += `if (qx.lang.Type.isPromise(result)) this.warn(this.classname + ".${setName} returns a promise which is being ignored");`;
+      }
+      strSetCode += `return result;`;
+      members[setName] = new Function(strSetCode);
 
       method.setAsync[name] = "set" + upname + "Async";
       if (config.async) {
