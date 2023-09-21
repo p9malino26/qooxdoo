@@ -16,7 +16,7 @@
    * Henner Kollmann (Henner.Kollmann@gmx.de, @hkollmann)
 
 ************************************************************************ */
-qx.Class.define("qx.tool.cli.commands.config.Delete", {
+qx.Class.define("qx.tool.cli.commands.config.Locate", {
   extend: qx.tool.cli.commands.Config,
   statics: {
     /**
@@ -25,8 +25,14 @@ qx.Class.define("qx.tool.cli.commands.config.Delete", {
      */
     getYargsCommand() {
       return {
-        command: "delete <key>",
-        describe: "Deletes a configuration value"
+        command: "locate <library> [path]",
+        describe: "Sets the path where a library can be found",
+        builder: {
+          delete: {
+            type: "boolean",
+            describe: "Deletes the location"
+          }
+        }
       };
     }
   },

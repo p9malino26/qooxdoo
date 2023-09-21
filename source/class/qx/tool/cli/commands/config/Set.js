@@ -49,7 +49,7 @@ qx.Class.define("qx.tool.cli.commands.config.Set", {
       }
 
       let keyInfo = this._breakout(this.argv.key);
-      let parent = cfg.db(keyInfo.parentKey, {});
+      let parent = cfg.setting(keyInfo.parentKey, {});
       if (value === undefined) {
         delete parent[keyInfo.childKey];
       } else {

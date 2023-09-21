@@ -39,7 +39,7 @@ qx.Class.define("qx.tool.cli.commands.config.Get", {
       await super.process();
       this._checkKey(this.argv);
       let cfg = await qx.tool.cli.ConfigDb.getInstance();
-      let value = cfg.db(this.argv.key);
+      let value = cfg.setting(this.argv.key);
       if (this.argv.bare) {
         qx.tool.compiler.Console.info(value || "");
       } else if (value !== undefined) {

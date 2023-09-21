@@ -65,12 +65,12 @@ qx.Class.define("qx.tool.cli.commands.config.List", {
       }
 
       // Recursively get a list of all known keys
-      scan(cfg.db(), "");
+      scan(cfg.setting(), "");
       keys = Object.keys(keys);
       keys.sort();
       keys = keys.map(key => ({
         key: key,
-        value: cfg.db(key),
+        value: cfg.setting(key),
         description: this._describe(key) || "Unrecognised key"
       }));
 

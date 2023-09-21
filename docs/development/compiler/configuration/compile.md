@@ -166,8 +166,8 @@ A complete example is:
 The `targets` key is an array of objects, one for each possible target that can
 be compiled. Each object can contain:
 
-- `type` - this is either "source", "build", or a class name; using a class name 
-  is advanced usage, but ultimately the standard names just shortcuts to class 
+- `type` - this is either "source", "build", or a class name; using a class name
+  is advanced usage, but ultimately the standard names just shortcuts to class
   names anyway ("source" is `qx.tool.compiler.targets.SourceTarget`, etc.).
 
 - `outputPath` the folder where the compilation outputs to, and will be created
@@ -195,10 +195,9 @@ be compiled. Each object can contain:
 - `minify` - (**optional**) determines the minification to be used for
   applications, if the target supports it; can be overridden on a per-
   application basis. Can be `off`, `minify`, `mangle`, or `beautify`.
-  
 - `inline-external-scripts` -- (**optional**) controls whether external scripts are added
   inline into the `index.js` of the target application, or whether they are loaded
-  by adding separate `<script>` tags into the document,  This is by default `false` for source
+  by adding separate `<script>` tags into the document, This is by default `false` for source
   targets and true for `build` targets; see also the `--inline-external-scripts` command
   line option.
 
@@ -249,7 +248,7 @@ and the value of which is either `true` (to enable), or `false` (to not add the
 plugin), or an object configuring the plugin.
 
 There is risk in adding support for additional, non-standard babel plugins - EG
-the @babel/plugin-proposal-* plug ins which add early proposed additions to
+the @babel/plugin-proposal-\* plug ins which add early proposed additions to
 javascript.
 
 Not surprisingly this comes with caveats, first of which is that changes to the
@@ -270,15 +269,15 @@ should be useful.
   situations where you want to have multiple targets simultaneously (see below)
 
 - `proxySourcePath` - (**optional**) when compiling source code, the compiler
-normally looks in the library, in the directory specified by that library's
-`Manifest.json` in `provides/class` (e.g. usually this is `./source/class`).  The
-`proxySourcePath` setting in a target allows a global override, specific to that
-target, which says that source files can be found somewhere else, in preference
-to the files which are found in the library.  While this allows a target to completely
-and arbitrarily replace class source files, the intention is that this is for 
-computer-generated class files which act as some kind of proxy for the original 
-functionality - a good example of a use case for this would be a class which, when
-compiled for the browser, is mostly proxy method calls (or whatever) to the server.
+  normally looks in the library, in the directory specified by that library's
+  `Manifest.json` in `provides/class` (e.g. usually this is `./source/class`). The
+  `proxySourcePath` setting in a target allows a global override, specific to that
+  target, which says that source files can be found somewhere else, in preference
+  to the files which are found in the library. While this allows a target to completely
+  and arbitrarily replace class source files, the intention is that this is for
+  computer-generated class files which act as some kind of proxy for the original
+  functionality - a good example of a use case for this would be a class which, when
+  compiled for the browser, is mostly proxy method calls (or whatever) to the server.
 
 - `addTimestampsToUrls` - (**optional**) if set to true, then all the URLs which are
   output will have the timestamp of the file appended as a query parameter; this allows
@@ -287,8 +286,25 @@ compiled for the browser, is mostly proxy method calls (or whatever) to the serv
   for build targets and `false` for source targets. Note that this option is entirely
   dependent on the application's index.html containing a template reference to the
   `indexJsTimestamp` variable in the `<script>` tag that loads the `index.js` file:
-  
+
   `<script type="text/javascript" src="${appPath}index.js${indexJsTimestamp}"></script>`
+
+- `fonts` - (**optional**) if provided, this controls how to handle web fonts; it is an
+  object that looks like:
+
+```json
+"fonts": {
+  "local": true,
+  "fontTypes": [ "woff", "ttf" ]
+}
+```
+
+The `local` property is a boolean which says whether to prefer local fonts to fonts on
+a CDN and loaded via CSS - this defaults to false and can be overridden with the `qx compile --prefer-local-fonts`
+command line option
+
+The `fontTypes` array lists font filename extensions that are to be used, by default this is
+"woff" but common extensions include "woff", "woff2', "ttf", "eot"
 
 ### Multiple Applications and Targets
 
@@ -432,12 +448,12 @@ an `environment` key, for example:
 
 ```json5
 {
-    /* ... snip ... */
-    "defaultTarget": "source",
-    "environment": {
-        "qx.icontheme": "Oxygen",
-        "demoapp.myCustomSetting": 42
-    }
+  /* ... snip ... */
+  defaultTarget: "source",
+  environment: {
+    "qx.icontheme": "Oxygen",
+    "demoapp.myCustomSetting": 42
+  }
 }
 ```
 
@@ -450,38 +466,38 @@ example:
 
 ```json5
 {
-    "applications": [
-        {
-            "class": "demoapp.FirstApplication",
-            "theme": "demoapp.theme.Theme",
-            "name": "appone",
-            "environment": {
-                "demoapp.myCustomSetting": 3
-            }
-        },
-        {
-            "class": "demoapp.SecondApplication",
-            "theme": "demoapp.theme.Theme",
-            "name": "apptwo"
-        }
-    ],
-    "targets": [
-        {
-            "type": "source",
-            "outputPath": "compiled/source",
-            "environment": {
-                "demoapp.myCustomSetting": 2
-            }
-        },
-        {
-            "type": "build",
-            "outputPath": "build-output"
-        }
-    ],
-    "environment": {
-        "qx.icontheme": "Oxygen",
-        "demoapp.myCustomSetting": 1
+  applications: [
+    {
+      class: "demoapp.FirstApplication",
+      theme: "demoapp.theme.Theme",
+      name: "appone",
+      environment: {
+        "demoapp.myCustomSetting": 3
+      }
+    },
+    {
+      class: "demoapp.SecondApplication",
+      theme: "demoapp.theme.Theme",
+      name: "apptwo"
     }
+  ],
+  targets: [
+    {
+      type: "source",
+      outputPath: "compiled/source",
+      environment: {
+        "demoapp.myCustomSetting": 2
+      }
+    },
+    {
+      type: "build",
+      outputPath: "build-output"
+    }
+  ],
+  environment: {
+    "qx.icontheme": "Oxygen",
+    "demoapp.myCustomSetting": 1
+  }
 }
 ```
 
@@ -497,9 +513,9 @@ code which can never be called; for example, the most common example of this is
 `qx.debug` which is true for the Source Target and false for Build Targets.
 
 However, the environment variable is compiled into every file, which means that
-if you set an environment variable which differs between applications (within the 
-same target), then the compiler cannot eliminate code and the check will take place 
-at runtime, instead of at compile time.  The compiler automatically determines which 
+if you set an environment variable which differs between applications (within the
+same target), then the compiler cannot eliminate code and the check will take place
+at runtime, instead of at compile time. The compiler automatically determines which
 settings can be compiled into the code.
 
 The only exception to this is if you use the `preserveEnvironment` setting when
@@ -634,7 +650,6 @@ If you omit the eslintConfig section a default will be used:
 ** The namespaces of all libraries will be added to the globals section
 automatically! **
 
-
 ## Web Server
 
 If you choose to use the optional web server by running `qx serve`, you can
@@ -647,7 +662,6 @@ change the default port by specifying the `listenPort` property:
   }
 }
 ```
-
 
 ## Running applications
 
@@ -673,18 +687,14 @@ In this example, the application with the "my-server-app" is run, with a command
 line similar to:
 `node compiled/source/my-server-app/my-server-app.js my command line arguments`
 
-
 ## Ignoring global symbols
 
 The compiler tries to detect symbols which have not been declared and will warn you
 if the symbol is not known to it; you can use the `@ignore` JSDoc tag in individual
-javascript files, or you can add a global list with the `"ignores"` key.  For example:
-
+javascript files, or you can add a global list with the `"ignores"` key. For example:
 
 ```json5
 {
-  ignores: [ "myGlobalVariable", "myOtherGlobal" ]
+  ignores: ["myGlobalVariable", "myOtherGlobal"]
 }
 ```
-
-

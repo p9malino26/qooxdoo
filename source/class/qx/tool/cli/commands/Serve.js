@@ -212,8 +212,10 @@ qx.Class.define("qx.tool.cli.commands.Serve", {
       this.fireDataEvent("beforeStart", {
         server: server,
         application: app,
-        outputdir: defaultMaker.getTarget().getOutputDir()
+        // defaultMaker will be null if there are no browser apps
+        outputdir: (defaultMaker || makers[0]).getTarget().getOutputDir()
       });
+
       server.on("error", e => {
         if (e.code === "EADDRINUSE") {
           qx.tool.compiler.Console.print(

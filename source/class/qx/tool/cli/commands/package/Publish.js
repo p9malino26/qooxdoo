@@ -196,7 +196,7 @@ qx.Class.define("qx.tool.cli.commands.package.Publish", {
 
       // token
       let cfg = await qx.tool.cli.ConfigDb.getInstance();
-      let github = cfg.db("github", {});
+      let github = cfg.setting("github", {});
       if (!github.token) {
         let response = await inquirer.prompt([
           {

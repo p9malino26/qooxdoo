@@ -46,7 +46,10 @@ qx.Class.define("qx.tool.cli.ConfigDb", {
      * @returns
      */
     async _applyPath(value, oldValue) {
-      this.__db = {};
+      this.__db = {
+        $$version: 2,
+        settings: {}
+      };
     },
 
     /**
@@ -55,6 +58,12 @@ qx.Class.define("qx.tool.cli.ConfigDb", {
     async load() {
       this.__db =
         (await qx.tool.utils.Json.loadJsonAsync(this.getPath())) || {};
+      if (this.__db.$$version == undefined) {
+        this.__db = {
+          $$version: 2,
+          settings: this.__db
+        };
+      }
     },
 
     /**
@@ -85,32 +94,32 @@ qx.Class.define("qx.tool.cli.ConfigDb", {
      * @param defaultValue {Object?} optional value to assign if it does not exist.
      * @return {Object?} the value
      */
-    db(path, defaultValue) {
-      if (path) {
-        let override = this.__overrides[path];
-        if (override) {
-          return override;
-        }
-        var result = this.__db;
-        var segs = path.split(".");
-        for (var i = 0; i < segs.length; i++) {
-          let seg = segs[i];
-          var tmp = result[seg];
-          if (tmp === undefined) {
-            if (defaultValue === undefined) {
-              return undefined;
-            }
-            if (i == segs.length - 1) {
-              tmp = result[seg] = defaultValue;
-            } else {
-              tmp = result[seg] = {};
-            }
-          }
-          result = tmp;
-        }
-        return result;
+    setting(path, defaultValue) {
+      if (!path) {
+        return this.__db.settings;
       }
-      return this.__db;
+      let override = this.__overrides[path];
+      if (override) {
+        return override;
+      }
+      var result = this.__db.settings;
+      var segs = path.split(".");
+      for (var i = 0; i < segs.length; i++) {
+        let seg = segs[i];
+        var tmp = result[seg];
+        if (tmp === undefined) {
+          if (defaultValue === undefined) {
+            return undefined;
+          }
+          if (i == segs.length - 1) {
+            tmp = result[seg] = defaultValue;
+          } else {
+            tmp = result[seg] = {};
+          }
+        }
+        result = tmp;
+      }
+      return result;
     }
   },
 

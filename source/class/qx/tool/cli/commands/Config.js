@@ -31,7 +31,7 @@ qx.Class.define("qx.tool.cli.commands.Config", {
         builder(yargs) {
           qx.tool.cli.Cli.addYargsCommands(
             yargs,
-            ["List", "Set", "Get", "Delete"],
+            ["List", "Set", "Get", "Delete", "Locate"],
 
             "qx.tool.cli.commands.config"
           );
