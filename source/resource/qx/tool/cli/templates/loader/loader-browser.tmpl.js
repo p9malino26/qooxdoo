@@ -75,7 +75,7 @@ qx.$$locales = %{Locales};
 qx.$$packageData = {};
 qx.$$g = {};
 qx.$$createdAt = function(obj, filename, lineNumber, column) {
-  if (obj !== undefined && obj !== null && typeof Object.$$createdAt === undefined) {
+  if (obj && obj.hasOwnProperty && !obj.hasOwnProperty("$$createdAt")) {
     Object.defineProperty(obj, "$$createdAt", {
       value: {
         filename: filename,
