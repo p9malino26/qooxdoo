@@ -205,8 +205,8 @@ qx.Class.define("qx.html.Jsx", {
     /** @type {Map} map of event names, all values are `true` */
     SYNTETIC_EVENTS: null,
 
-    /** @type {typeof qx.html.Fragment} tagname for fragments */
-    FRAGMENT: qx.html.Fragment
+    /** @type {String} tagname for fragments */
+    FRAGMENT: "$$fragment"
   },
 
   defer(statics) {
