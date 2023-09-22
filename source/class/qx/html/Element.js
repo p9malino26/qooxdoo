@@ -754,7 +754,7 @@ qx.Class.define("qx.html.Element", {
       // recursively iterate children. if any are instanceof qx.html.Slot, append to local slots, if any are `.getIscustomElement() === true`, do not look at their children
       const slots = [];
 
-      if (element?.getIsCustomElement()) {
+      if (element.getIsCustomElement?.()) {
         return slots;
       }
 
