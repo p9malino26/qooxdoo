@@ -93,6 +93,9 @@ qx.Class.define("qx.html.Jsx", {
           }
           injectChildren(children);
         }
+        if (attributes?.slot) {
+          element.setAttributes({ slot: attributes.slot });
+        }
         return element;
       }
 
