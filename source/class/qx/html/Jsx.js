@@ -53,9 +53,8 @@ qx.Class.define("qx.html.Jsx", {
     createElement(tagname, attributes) {
       var children = qx.lang.Array.fromArguments(arguments, 2);
       var self = this;
-      if (typeof tagname === "function") {
-        return tagname(attributes ?? {}, children);
-      }
+
+      // FRAGMENT
       if (tagname == qx.html.Jsx.FRAGMENT) {
         var arr = new qx.data.Array();
         function addChildrenFragment(children) {
@@ -70,6 +69,33 @@ qx.Class.define("qx.html.Jsx", {
         addChildrenFragment(children);
         return arr;
       }
+
+      // CUSTOM ELEMENT
+      if (typeof tagname === "function") {
+        const element = tagname(attributes ?? {});
+        element.setIsCustomElement(true);
+        if (children) {
+          function injectChildren(children) {
+            children.forEach(function (child) {
+              if (
+                child instanceof qx.data.Array ||
+                qx.lang.Type.isArray(child)
+              ) {
+                injectChildren(child);
+              } else if (typeof child == "string") {
+                element.inject(new qx.html.Text(child));
+              } else if (typeof child == "number") {
+                element.inject(new qx.html.Text("" + child));
+              } else {
+                element.inject(child);
+              }
+            });
+          }
+          injectChildren(children);
+        }
+        return element;
+      }
+
       var newAttrs = {};
       var eventHandlers = {};
       var innerHtml = null;
@@ -118,6 +144,31 @@ qx.Class.define("qx.html.Jsx", {
         newAttrs
       );
 
+      // SLOT
+      if (tagname === "slot") {
+        if (children) {
+          function addDefaultChildren(children) {
+            children.forEach(child => {
+              if (
+                child instanceof qx.data.Array ||
+                qx.lang.Type.isArray(child)
+              ) {
+                addDefaultChildren(child);
+              } else if (typeof child == "string") {
+                element.addDefaultChild(new qx.html.Text(child));
+              } else if (typeof child == "number") {
+                element.addDefaultChild(new qx.html.Text("" + child));
+              } else {
+                element.addDefaultChild(child);
+              }
+            });
+          }
+          addDefaultChildren(children);
+          element.sealDefaultChildren();
+        }
+        return element;
+      }
+
       if (children) {
         function addChildren(children) {
           children.forEach(function (child) {
@@ -154,8 +205,8 @@ qx.Class.define("qx.html.Jsx", {
     /** @type {Map} map of event names, all values are `true` */
     SYNTETIC_EVENTS: null,
 
-    /** @type {String} tagname for fragments */
-    FRAGMENT: "$$fragment"
+    /** @type {typeof qx.html.Fragment} tagname for fragments */
+    FRAGMENT: qx.html.Fragment
   },
 
   defer(statics) {
