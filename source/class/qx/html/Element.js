@@ -63,6 +63,8 @@ qx.Class.define("qx.html.Element", {
 
     this.__styleValues = styles || null;
     this.__attribValues = attributes || null;
+    this.__slots = new Map();
+
     if (attributes) {
       for (var key in attributes) {
         if (!key) {
@@ -466,6 +468,17 @@ qx.Class.define("qx.html.Element", {
       nullable: true,
       check: "String",
       apply: "_applyCssClass"
+    },
+
+    /**
+     * Used by the {@link qx.html.Slot}-related mechanisms to determine if an
+     * element is the top-level of a custom tag function.
+     */
+    isCustomElement: {
+      init: false,
+      nullable: false,
+      check: "Boolean",
+      apply: "_applyIsCustomElement"
     }
   },
 
@@ -496,6 +509,15 @@ qx.Class.define("qx.html.Element", {
 
     __styleValues: null,
     __attribValues: null,
+
+    /**
+     * ! This is a {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map | Map}
+     *
+     * ! This is NOT a POJO
+     *
+     * @type {Map<string, qx.html.Slot>}
+     */
+    __slots: null,
 
     /*
      * @Override
@@ -594,6 +616,12 @@ qx.Class.define("qx.html.Element", {
      * @Override
      */
     _addChildImpl(child) {
+      if (this.getIsCustomElement()) {
+        throw new Error(
+          `Cannot add children to Custom Elements! (use ${this.classname}.inject and <slot> tags instead)`
+        );
+      }
+
       super._addChildImpl(child);
       this.__childrenHaveChanged = true;
     },
@@ -602,6 +630,10 @@ qx.Class.define("qx.html.Element", {
      * @Override
      */
     _removeChildImpl(child) {
+      if (this.getIsCustomElement()) {
+        throw new Error(`Cannot remove children from Custom Elements!`);
+      }
+
       super._removeChildImpl(child);
       this.__childrenHaveChanged = true;
     },
@@ -620,6 +652,132 @@ qx.Class.define("qx.html.Element", {
         throw new Error(
           "Cannot get qxObjectId because module.objectid is false"
         );
+      }
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      SLOTS API
+    ---------------------------------------------------------------------------
+    */
+    /**
+     * Returns whether the element has slot(s) matching the given projection.
+     *
+     * @param projection {true|String?} `true` to check for the default slot, a string to check for a slot with the given name, or `null|undefined` to check for any slot(s)
+     * @return {Boolean} Indicates whether the projected slot exists, or if any slots exist if no projection was specified
+     * @example
+     * ```js
+     * myNode.hasSlots();             // `true` if there are any slots                 `false` if there are none
+     * myNode.hasSlots(true);         // `true` if there is a default (unnamed) slot   `false` if there is not
+     * myNode.hasSlots("mySlotName"); // `true` if there is a slot named `mySlotName`  `false` if there is not
+     * ```
+     */
+    hasSlots(projection) {
+      if (projection === null || projection === undefined) {
+        return !!this.__slots.size;
+      }
+
+      // check for literal `true`, NOT truthiness!
+      if (projection === true) {
+        projection = qx.html.Slot.DEFAULT_SLOT;
+      }
+
+      if (typeof projection === "string") {
+        return this.__slots.has(projection);
+      }
+
+      throw new Error(
+        `Cannot lookup slot for projection: ${JSON.stringify(
+          projection
+        )} ! (expected: string, true, or null/undefined)`
+      );
+    },
+
+    /**
+     * Provides devtime debugging assistance for invalid slot usage.
+     * @return {Boolean} `false` if no such slot, `true` otherwise
+     */
+    __injectionSlotCheck(slotName) {
+      if (!this.hasSlots(slotName)) {
+        if (qx.core.Environment.get("qx.debug")) {
+          console.error(
+            `No slot named "${slotName}" found! Available slots are: ${Array.from(
+              this.__slots.keys()
+            ).join(", ")}`
+          );
+
+          debugger;
+        }
+        return false;
+      }
+      return true;
+    },
+
+    /**
+     * Inject a child into a slot descendant of this element.
+     *
+     * @param childNode {qx.html.Element} element to insert. Use a fragment to inject many elements.
+     * @param slotNameOverride {String?} name of the slot to inject into. If not provided, the slot name will be read from the `slot` attribute of `childNode`. This may be useful when injecting fragments.
+     * @return {this} this object (for chaining support)
+     *
+     * @example
+     * ```js
+     * myElem.inject(<p>Hello World</p>);                   // inject one child to the default slot
+     * myElem.inject(<p slot="mySlotName">Hello World</p>); // inject one child to the slot named "mySlotName" (declarative syntax)
+     * myElem.inject(<p>Hello World</p>, "mySlotName");     // inject one child to the slot named "mySlotName" (functional syntax)
+     * myElem.inject((
+     *   <>
+     *     <p>Hello World</p>
+     *     <p>Hello Qooxdoo</p>
+     *   </>
+     * ), "mySlotName");                                    // inject a fragment of children to the slot named "mySlotName"
+     *
+     * ```
+     */
+    inject(childNode, slotNameOverride) {
+      const slotName =
+        childNode.getAttribute("slot") ??
+        slotNameOverride ??
+        qx.html.Slot.DEFAULT_SLOT;
+
+      if (!this.__injectionSlotCheck(slotName)) {
+        return;
+      }
+
+      this.__slots.get(slotName).add(childNode);
+
+      // Chaining support
+      return this;
+    },
+
+    __slotScan(element) {
+      // recursively iterate children. if any are instanceof qx.html.Slot, append to local slots, if any are `.getIscustomElement() === true`, do not look at their children
+      const slots = [];
+
+      if (element.getIsCustomElement?.()) {
+        return slots;
+      }
+
+      if (element instanceof qx.html.Slot) {
+        slots.push(element);
+      }
+
+      element
+        .getChildren()
+        ?.forEach(child => slots.push(...this.__slotScan(child)));
+
+      return slots;
+    },
+
+    _slotScanAdd(element) {
+      for (const slot of this.__slotScan(element)) {
+        this.__slots.set(slot.getName(), slot);
+      }
+    },
+
+    _slotScanRemove(child) {
+      for (const slot of this.__slotScan(child)) {
+        this.__slots.delete(slot.getName());
       }
     },
 
@@ -1690,6 +1848,22 @@ qx.Class.define("qx.html.Element", {
         value.split(" ").forEach(name => (classes[name.toLowerCase()] = name));
       }
       this.setAttribute("class", this.__combineClasses(classes));
+    },
+
+    _applyIsCustomElement(value, oldValue) {
+      // if currently `true` and trying to set `false`, throw an error
+      if (!value && oldValue) {
+        throw new Error(
+          `Cannot change isCustomElement property of ${this.classname} after it has been set`
+        );
+      }
+      // if no change, return
+      if (value === oldValue) {
+        return;
+      }
+
+      // therefore currently `false` and trying to set `true`; re-grab all slots
+      this.getChildren().forEach(child => this._slotScanAdd(child));
     },
 
     /*
