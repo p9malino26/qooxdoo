@@ -324,7 +324,7 @@ qx.Class.define("qx.tool.compiler.app.Library", {
                 }
 
                 // Make sure it looks like a file
-                var match = filename.match(/(.*)(\.\w+)$/);
+                var match = filename.match(/^([a-z0-9_\$]+)(\.[jt]s)$/i);
                 if (!match) {
                   log.trace("Skipping file " + folder + "/" + filename);
                   cb();
@@ -346,16 +346,15 @@ qx.Class.define("qx.tool.compiler.app.Library", {
                   t.__knownSymbols[className] = "class";
                   t.__sourceFileExtensions[className] = extension;
                   classes.push(className);
-                } else {
-                  t.__knownSymbols[filename] = "resource";
-                }
-                if (Boolean(packageName) && !t.__knownSymbols[packageName]) {
-                  t.__knownSymbols[packageName] = "package";
-                  var pos;
-                  tmp = packageName;
-                  while ((pos = tmp.lastIndexOf(".")) > -1) {
-                    tmp = tmp.substring(0, pos);
-                    t.__knownSymbols[tmp] = "package";
+
+                  if (Boolean(packageName) && !t.__knownSymbols[packageName]) {
+                    t.__knownSymbols[packageName] = "package";
+                    var pos;
+                    tmp = packageName;
+                    while ((pos = tmp.lastIndexOf(".")) > -1) {
+                      tmp = tmp.substring(0, pos);
+                      t.__knownSymbols[tmp] = "package";
+                    }
                   }
                 }
 
