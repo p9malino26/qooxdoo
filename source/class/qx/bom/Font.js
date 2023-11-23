@@ -172,7 +172,6 @@ qx.Class.define("qx.bom.Font", {
      * of 1 corresponds to the default line height
      */
     lineHeight: {
-      check: "Number",
       nullable: true,
       apply: "_applyLineHeight"
     },
