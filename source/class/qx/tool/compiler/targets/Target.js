@@ -543,16 +543,18 @@ qx.Class.define("qx.tool.compiler.targets.Target", {
         assets[asset.getFilename()] = asset.toString();
       });
 
+      appMeta.addPreBootCode("qx.$$fontBootstrap={};\n");
       if (analyser.getApplicationTypes().indexOf("browser") > -1) {
-        appMeta.addPreBootCode("qx.$$fontBootstrap={};\n");
         await this.__writeDeprecatedWebFonts(application, appMeta, assets);
-        await this.__writeManifestFonts(
-          application,
-          appMeta,
-          assets,
-          bootPackage
-        );
       }
+      // Manifest fonts are supported on the node target
+      await this.__writeManifestFonts(
+        application,
+        appMeta,
+        assets,
+        bootPackage
+      );
+
       await this._writeApplication();
       this.__appMeta = null;
     },
