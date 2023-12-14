@@ -5,7 +5,7 @@
    http://qooxdoo.org
 
    Copyright:
-     2023 Zenesis Ltd http://www.zenesis.com
+     2023 ZenesisUK https://www.zenesis.com/
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -18,12 +18,6 @@
 
 /**
  * The slot turns JSX from a syntax convenience into a declaratively expressive system.
- *
- * ! SLOTS ARE CURRENTLY ONLY SUPPORTED FOR JSX CUSTOM ELEMENT FUNCTIONS WHICH HAVE A NON-FRAGMENT ELEMENT AS THEIR JSX ROOT !
- *
- * ? Slots in all JSX expressions may be added in future
- *
- * ? Slots in fragment-rooted JSX expressions may be added in future
  *
  * Passing children to a custom tag:
  * ```jsx
@@ -59,18 +53,19 @@ qx.Class.define("qx.html.Slot", {
   /**
    * Creates a new Slot
    *
-   * ! Intended for use with JSX, non-JSX use may yield unexpected results !
-   * (will fix in future)
-   *
    * @see constructor for {Element}
    */
   construct(slotName) {
-    if (slotName?.includes(" ")) {
+    if (
+      typeof slotName === "string" &&
+      !slotName?.match(/^[a-zA-Z0-9\-\_]+$/)
+    ) {
       throw new Error(
-        `Slots may only have one name! (\`<slot name="${slotName}">\` cannot contain spaces)`
+        `Slot name "${slotName}" is invalid! Slot names may only contain alphanumeric characters, hyphens, and underscores.`
       );
     }
-    super("slot", {}, { name: slotName ?? qx.html.Slot.DEFAULT_SLOT });
+
+    super("slot", {}, { name: slotName ?? qx.html.Slot.DEFAULT });
     this._defaultChildren = [];
   },
 
@@ -81,14 +76,6 @@ qx.Class.define("qx.html.Slot", {
   */
 
   members: {
-    // this member variable is only used for IE browsers to be able
-    // to the tag name which will be set. This is heavily connected to the runtime
-    // change of decorators and the use of external (=unmanaged images). It is
-    // necessary to be able to determine what tag will be used e.g. before the
-    // ImageLoader has finished its loading of an external image.
-    // See Bug #3894 for more details
-    tagNameHint: null,
-
     /**@override */
     inject() {
       throw new Error(
@@ -102,7 +89,9 @@ qx.Class.define("qx.html.Slot", {
       serializer.pushQxObject(this);
 
       let id = serializer.getQxObjectIdFor(this);
-      if (id) serializer.setAttribute("data-qx-object-id", `"${id}"`);
+      if (id) {
+        serializer.setAttribute("data-qx-object-id", `"${id}"`);
+      }
 
       // Children
       if (this._children?.length) {
@@ -125,6 +114,13 @@ qx.Class.define("qx.html.Slot", {
     */
 
     _defaultChildren: null,
+
+    /**
+     * @returns {ReadonlyArray<qx.html.Node>} The default children of this slot
+     */
+    getDefaultChildren() {
+      return this._defaultChildren;
+    },
 
     addDefaultChild(child) {
       try {
@@ -151,6 +147,6 @@ qx.Class.define("qx.html.Slot", {
   *****************************************************************************
   */
   statics: {
-    DEFAULT_SLOT: "qx.html.Slot.__RESERVED_DEFAULT_SLOT__"
+    DEFAULT: Symbol("qx.html.Slot.DEFAULT")
   }
 });

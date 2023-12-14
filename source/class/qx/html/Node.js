@@ -407,9 +407,12 @@ qx.Class.define("qx.html.Node", {
      * @return {Boolean}
      */
     isInDocument() {
-      if (!this._domNode) return false;
-      if (this._domNode.isConnected !== undefined)
+      if (!this._domNode) {
+        return false;
+      }
+      if (this._domNode.isConnected !== undefined) {
         return this._domNode.isConnected;
+      }
 
       if (document.body) {
         for (
@@ -431,11 +434,12 @@ qx.Class.define("qx.html.Node", {
     updateObjectId() {
       // Copy Object Id
       if (qx.core.Environment.get("module.objectid")) {
-        if (this._domNode)
+        if (this._domNode) {
           qx.bom.element.Attribute.set(
             "data-qx-object-id",
             this._getApplicableQxObjectId()
           );
+        }
       }
     },
 
@@ -926,20 +930,25 @@ qx.Class.define("qx.html.Node", {
       var self = this;
       function addImpl(arr) {
         arr.forEach(function (child) {
-          if (qx.core.Environment.get("qx.debug")) {
-            qx.core.Assert.assertTrue(!!child);
-          }
-          if (typeof child == "string") {
-            child = new qx.html.Text(child);
-          } else if (typeof child == "number") {
-            child = new qx.html.Text("" + child);
-          }
-          if (child instanceof qx.data.Array || qx.lang.Type.isArray(child)) {
+          if (["string", "number", "boolean"].includes(typeof child)) {
+            child = new qx.html.Text(`${child}`);
+          } else if (
+            child instanceof qx.data.Array ||
+            qx.lang.Type.isArray(child)
+          ) {
             addImpl(child);
-          } else {
-            self._addChildImpl(child);
-            self._children.push(child);
           }
+          if (child == null) {
+            if (qx.core.Environment.get("qx.debug")) {
+              console.error(
+                `Tried to add a child of ${child} to ${self.classname}`
+              );
+            }
+            child = new qx.html.Text(`[${child}]`);
+          }
+
+          self._addChildImpl(child);
+          self._children.push(child);
         });
       }
       addImpl(qx.lang.Array.fromArguments(arguments));

@@ -348,7 +348,7 @@ qx.Bootstrap.define("qx.bom.element.Attribute", {
       ) {
         if (value === true) {
           let result = {};
-          result[name] = name;
+          result[name] = `"${name}"`;
           return result;
         }
       } else if (value !== null) {
