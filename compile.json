@@ -54,6 +54,8 @@
     "loadSass"
   ],
   "libraries": ["."],
+  "meta": "compiled/meta",
+  "typescript": "compiled/qooxdoo.d.ts",
   "applications": [
     {
       "class": "qx.tool.cli.Application",
