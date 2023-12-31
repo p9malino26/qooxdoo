@@ -250,6 +250,11 @@ qx.Bootstrap.define("qx.Class", {
           this.__addEvents(clazz, config.events, true);
         }
 
+        //Process cached objects
+        if (config.objects) {
+          this.__addObjects(clazz, config.objects);
+        }
+
         // Include mixins
         // Must be the last here to detect conflicts
         if (config.include) {
@@ -773,7 +778,8 @@ qx.Bootstrap.define("qx.Class", {
         environment: "object", // Map
         events: "object", // Map
         defer: "function", // Function
-        destruct: "function" // Function
+        destruct: "function", // Function
+        objects: "object" // Map
       },
 
       default: null
@@ -1182,15 +1188,11 @@ qx.Bootstrap.define("qx.Class", {
           // Nothing
         }
       }
-      clazz.basename = basename;
-
-      // Store type info
+      clazz.basename = basename; // Store type info
       clazz.$$type = "Class";
       if (type) {
         clazz.$$classtype = type;
-      }
-
-      // Attach toString
+      } // Attach toString
       if (!clazz.hasOwnProperty("toString")) {
         clazz.toString = this.genericToString;
       }
@@ -1279,6 +1281,37 @@ qx.Bootstrap.define("qx.Class", {
       } else {
         clazz.$$events = events;
       }
+    },
+
+    __addObjects(clazz, objects) {
+      function validateCachedObject(key, value) {
+        if (typeof value !== "function") {
+          throw new Error(
+            "Invalid cached object definition for " +
+              key +
+              " in " +
+              clazz.classname
+          );
+        }
+
+        if (typeof key != "string") {
+          throw new Error(
+            "Invalid cached object key for " + key + +" in " + clazz.classname
+          );
+        }
+      }
+
+      if (!(objects instanceof Object)) {
+        throw new Error("Invalid objects definition for " + clazz.classname);
+      }
+
+      if (qx.core.Environment.get("qx.debug")) {
+        for (const key in objects) {
+          validateCachedObject(key, objects[key]);
+        }
+      }
+
+      clazz.$$objects = objects;
     },
 
     /**
@@ -1585,7 +1618,11 @@ qx.Bootstrap.define("qx.Class", {
               );
             }
 
-            if (patch !== true && proto.hasOwnProperty(key)) {
+            if (
+              patch !== true &&
+              proto.hasOwnProperty(key) &&
+              key != "_createQxObjectImpl"
+            ) {
               throw new Error(
                 'Overwriting member "' +
                   key +
