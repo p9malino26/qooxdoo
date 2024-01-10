@@ -138,11 +138,15 @@ qx.Class.define("qx.ui.list.column.AbstractWidgetColumn", {
      * @Override
      */
     _updateEditableImpl(bindData, enabled, readOnly) {
-      if (this.isReadOnly()) readOnly = true;
+      if (this.isReadOnly()) {
+        readOnly = true;
+      }
       if (enabled) {
-        if (typeof bindData.widget.setReadOnly == "function")
+        if (typeof bindData.widget.setReadOnly == "function") {
           bindData.widget.set({ enabled: true, readOnly: readOnly });
-        else bindData.widget.set({ enabled: !readOnly });
+        } else {
+          bindData.widget.set({ enabled: !readOnly });
+        }
       } else {
         bindData.widget.set({ enabled: false });
       }
