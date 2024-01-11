@@ -134,7 +134,8 @@ qx.Class.define("qx.tool.cli.commands.Command", {
 
     /**
      *
-     * @returns @see {@link qx.tool.config.Utils#getCompilerVersion}
+     * @see {@link qx.tool.config.Utils#getCompilerVersion}
+     * @returns {String}
      */
     getCompilerVersion() {
       return qx.tool.config.Utils.getCompilerVersion();

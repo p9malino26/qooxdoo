@@ -26,6 +26,9 @@ qx.Class.define("qx.tool.utils.BabelHelpers", {
           node.elements.forEach(element => result.push(doCollapse(element)));
           return result;
         }
+        if (node.type === "StringLiteral") {
+          return node.value;
+        }
         if (node.type != "MemberExpression") {
           return "(" + node.type + ")";
         }
@@ -59,6 +62,38 @@ qx.Class.define("qx.tool.utils.BabelHelpers", {
       }
 
       return doCollapse(node);
+    },
+
+    /**
+     * Helper method that collapses the MemberExpression into a string
+     * @param node
+     * @returns {string}
+     */
+    collapseParam(param) {
+      switch (param.type) {
+        case "Identifier":
+          return param.name;
+
+        case "AssignmentPattern":
+          return qx.tool.utils.BabelHelpers.collapseParam(param.left);
+
+        case "RestElement":
+          return (
+            "..." + qx.tool.utils.BabelHelpers.collapseParam(param.argument)
+          );
+
+        case "ObjectPattern":
+          return "arg0";
+
+        case "ArrayPattern":
+          return "arg0";
+      }
+
+      // ...cases...
+
+      throw new Error(
+        `collapseParam: ${param.type} not useable as a parameter`
+      );
     },
 
     /**
@@ -132,6 +167,7 @@ qx.Class.define("qx.tool.utils.BabelHelpers", {
             node.argument,
             isProperties
           );
+
           if (typeof tmp == "number") {
             return tmp * -1;
           }
@@ -140,6 +176,7 @@ qx.Class.define("qx.tool.utils.BabelHelpers", {
             node.argument,
             isProperties
           );
+
           if (typeof tmp == "boolean") {
             return !tmp;
           }
@@ -175,21 +212,17 @@ qx.Class.define("qx.tool.utils.BabelHelpers", {
       if (!comment) {
         return null;
       }
-      if (!qx.lang.Type.isArray(comment)) {
-        comment = [comment];
+      if (qx.lang.Type.isArray(comment)) {
+        comment = comment.slice(-1)[0];
       }
-      var result = {};
-      comment.forEach(comment => {
-        var tmp = qx.tool.compiler.jsdoc.Parser.parseComment(comment.value);
-        for (var key in tmp) {
-          var value = tmp[key];
-          if (!result[key]) {
-            result[key] = value;
-          } else {
-            qx.lang.Array.append(result[key], value);
-          }
-        }
-      });
+      const result = {
+        raw: comment.value?.split("\n")
+      };
+
+      const tmp = qx.tool.compiler.jsdoc.Parser.parseComment(comment.value);
+      for (const key in tmp) {
+        result[key] = tmp[key];
+      }
 
       return result;
     }

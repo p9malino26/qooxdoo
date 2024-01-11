@@ -50,16 +50,19 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
   },
 
   members: {
-    /** @type{qx.tool.compiler.MetaDatabase} */
+    /** @type {qx.tool.compiler.MetaDatabase} */
     __metaDb: null,
 
-    /** @type{Stream} where to write the .d.ts */
+    /** @type {Stream} where to write the .d.ts */
     __outputStream: null,
 
     __outputStreamClosed: null,
 
-    /** @type{qx.tool.compiler.MetaExtraction} */
+    /** @type {qx.tool.compiler.MetaExtraction} */
     __currentClass: null,
+
+    /** @type {object} */
+    __hierarchy: null,
 
     /** Current indent */
     __indent: "    ",
@@ -78,21 +81,35 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
       this.write(`// Generated declaration file at ${time}\n`);
 
       let str = qx.util.ResourceManager.getInstance().toUri(
-        "qx/tool/cli/templates/TypeScriptWriter-base_declaration.txt"
+        "qx/tool/cli/templates/TypeScriptWriter-base_declaration.d.ts"
       );
+
       let baseDeclaration = await fs.promises.readFile(str, "utf8");
-      this.write(baseDeclaration);
+      this.write(baseDeclaration + "\n");
     },
 
     /**
      * Closes the stream
      */
     async close() {
-      this.write("}\n");
       await this.__outputStream.end();
       this.__outputStream = null;
       await this.__outputStreamClosed;
       this.__outputStreamClosed = null;
+
+      // add global declaration file for tooling (eg, text editor) support
+      const globalFile = path.join("source", "global.d.ts");
+      if (!fs.existsSync(globalFile)) {
+        fs.writeFileSync(
+          globalFile,
+          [
+            "// the reference directive enables tooling to discover the generated type definitions",
+            `/// <reference path="../${this.getOutputTo()}" />`,
+            "",
+            "// add custom global declarations here"
+          ].join("\n")
+        );
+      }
     },
 
     /**
@@ -104,6 +121,7 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
       let classnames = this.__metaDb.getClassnames();
       classnames.sort();
       let lastPackageName = null;
+      let declared = false;
       for (let classname of classnames) {
         let metaData = this.__metaDb.getMetaData(classname);
         var pos = classname.lastIndexOf(".");
@@ -112,17 +130,20 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
           packageName = classname.substring(0, pos);
         }
         if (lastPackageName != packageName) {
-          if (lastPackageName !== null) {
-            this.write("}\n");
+          if (lastPackageName) {
+            this.write("}\n\n");
           }
           if (packageName) {
             this.write("declare module " + packageName + " {\n");
+            declared = true;
           } else {
-            this.write("declare {\n");
+            declared = false;
           }
           lastPackageName = packageName;
+        } else {
+          this.write("\n");
         }
-        await this.writeClass(metaData);
+        await this.writeClass(metaData, declared);
       }
       await this.close();
     },
@@ -137,12 +158,13 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
     /**
      * Write the class or interface declaration
      */
-    async writeClass(meta) {
+    async writeClass(meta, declared) {
       if (!meta.className) {
         return;
       }
 
       this.__currentClass = meta;
+      this.__hierarchy = this.__metaDb.getHierarchyFlat(meta);
       // qx.tool.compiler.Console.info("Processing class " + meta.packageName + "." + meta.name);
       var extendsClause = "";
       if (
@@ -151,9 +173,17 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
         meta.superClass !== "Array" &&
         meta.superClass !== "Error"
       ) {
-        let superType = this.getType(meta.superClass);
-        if (superType != "any") {
-          extendsClause = " extends " + superType;
+        if (meta.type === "interface" && Array.isArray(meta.superClass)) {
+          let superTypes = meta.superClass.map(sup => this.getType(sup));
+          superTypes.filter(sup => sup != "any");
+          if (superTypes.length) {
+            extendsClause = " extends " + superTypes.join(", ");
+          }
+        } else {
+          let superType = this.getType(meta.superClass);
+          if (superType != "any") {
+            extendsClause = " extends " + superType;
+          }
         }
       }
       var type = "class "; // default for class and mixins
@@ -162,6 +192,11 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
       } else if (meta.abstract) {
         type = "abstract " + type;
       }
+      if (!declared) {
+        type = "declare " + type;
+      }
+
+      this.__writeJsDoc(meta.jsdoc?.raw, meta.location);
       this.write("  // " + meta.className + "\n");
       let name = meta.className;
       let pos = name.lastIndexOf(".");
@@ -171,7 +206,10 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
       this.write("  " + type + name + extendsClause);
 
       if (meta.interfaces && meta.interfaces.length) {
-        this.write(" implements " + meta.interfaces.join(", "));
+        this.write(
+          " implements " +
+            meta.interfaces.map(itf => this.getType(itf)).join(", ")
+        );
       }
 
       this.write(" {\n");
@@ -180,6 +218,148 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
         this.writeConstructor(meta.construct);
       }
 
+      this.writeClassBody(meta);
+
+      this.write("\n  }\n");
+      this.__currentClass = null;
+      this.__hierarchy = null;
+    },
+
+    /**
+     * Checks whether a class member is an override or not.
+     * @param {string} name - the name of the class member
+     * @param {"statics"|"members"|"properties"|"events"} kind - the kind of the class member
+     * @param {object} meta - the metadata of the class
+     * @returns metadata of a parent member which contains substantial type information
+     */
+    checkOverride(name, kind, meta) {
+      // can only be an override on a `class`, not on `interface`
+      const ifPossible = this.__currentClass.type !== "interface";
+
+      if (
+        !arguments[3] &&
+        meta.type === "mixin" &&
+        (this.__currentClass.mixins ?? []).includes(meta.className)
+      ) {
+        const result = this.checkOverride(
+          name,
+          kind,
+          this.__currentClass,
+          true
+        );
+
+        if (
+          JSON.stringify(result.definition) ===
+          JSON.stringify(meta[kind]?.[name])
+        ) {
+          return { definition: result.definition, override: false };
+        }
+        return result;
+      }
+
+      const isSubstantial = meta =>
+        meta &&
+        (meta.returnType ||
+          (meta.params?.length && meta.params.every(param => param.type)));
+
+      // check interfaces
+      if (meta.interfaces) {
+        for (const itf of meta.interfaces) {
+          const itfMeta = this.__metaDb.getMetaData(itf);
+          // recurse: interfaces can have super
+          const itfResult = this.checkOverride(name, kind, itfMeta, true);
+          if (itfResult) {
+            return { definition: itfResult.definition, override: false };
+          }
+          // do this level
+          if (
+            itfMeta[kind] &&
+            itfMeta[kind][name] &&
+            isSubstantial(itfMeta[kind][name])
+          ) {
+            return { definition: itfMeta[kind][name], override: false };
+          }
+        }
+      }
+
+      // check superclass
+      if (meta.superClass) {
+        const superClassMeta = this.__metaDb.getMetaData(meta.superClass);
+        // may be null if meta class extends non-qooxdoo class
+        if (superClassMeta) {
+          // recurse: superclasses can include mixins, have super
+          const superClassResult = this.checkOverride(
+            name,
+            kind,
+            superClassMeta,
+            true
+          );
+
+          if (superClassResult) {
+            return {
+              definition: superClassResult.definition,
+              override: ifPossible
+            };
+          }
+          // do this level
+          if (
+            superClassMeta[kind] &&
+            superClassMeta[kind][name] &&
+            isSubstantial(superClassMeta[kind][name])
+          ) {
+            return {
+              definition: superClassMeta[kind][name],
+              override: ifPossible
+            };
+          }
+        }
+      }
+
+      // check mixins
+      if (meta.mixins) {
+        for (const mixin of meta.mixins) {
+          const mixinMeta = this.__metaDb.getMetaData(mixin);
+          // recurse: mixins can include mixins
+          const mixinResult = this.checkOverride(name, kind, mixinMeta, true);
+          if (mixinResult) {
+            return { definition: mixinResult.definition, override: ifPossible };
+          }
+          // do this level
+          if (
+            mixinMeta[kind] &&
+            mixinMeta[kind][name] &&
+            isSubstantial(mixinMeta[kind][name])
+          ) {
+            return { definition: mixinMeta[kind][name], override: ifPossible };
+          }
+        }
+      }
+
+      if (meta[kind]?.[name]) {
+        return { definition: meta[kind][name], override: false };
+      }
+    },
+
+    /**
+     * Include the members, statics, properties of all mixins, if any.
+     */
+    includeMixins(meta) {
+      const mixins = meta.mixins
+        ? Array.isArray(meta.mixins)
+          ? meta.mixins
+          : [meta.mixins]
+        : [];
+
+      for (const mixin of mixins) {
+        this.write(this.__indent + `// Mixin: ${mixin}\n`);
+        this.writeClassBody(this.__hierarchy.mixins[mixin]);
+      }
+    },
+
+    /**
+     * Writes the body of the class (excl. constructor) and processes mixins
+     */
+    writeClassBody(meta) {
       if (meta.isSingleton) {
         this.writeMethods(
           {
@@ -188,7 +368,9 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
               access: "public",
               jsdoc: {
                 "@return": [{ type: meta.className }]
-              }
+              },
+
+              appearsIn: []
             }
           },
 
@@ -196,62 +378,102 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
           true
         );
       }
-
       this.writeMethods(meta.statics, meta, true);
       this.writeMethods(meta.members, meta);
-
       if (meta.properties) {
         this.writeProperties(meta);
       }
-
-      this.write("\n  }\n");
-      this.__currentClass = null;
     },
 
     /**
      * Writes the property accessors
-     *
-     * @param {*} meta
      */
     writeProperties(meta) {
       for (let propertyName in meta.properties) {
         let propertyMeta = meta.properties[propertyName];
+        if (propertyMeta.appearsIn.length) {
+          const superLikeName = propertyMeta.appearsIn.slice(-1)[0];
+          const superLikeMeta = this.__metaDb.getMetaData(superLikeName);
+          const superLikeProperty = superLikeMeta.properties[propertyName];
+          superLikeProperty.jsdoc = propertyMeta.jsdoc;
+          propertyMeta = superLikeProperty;
+        }
+
         let upname = qx.lang.String.firstUp(propertyName);
-        let type = propertyMeta.check || "any";
-        if (!propertyMeta.group) {
+        let type = propertyMeta.json?.check ?? "any";
+
+        if (Array.isArray(type)) {
+          // `[t1, t2]` -> `t1|t2`
+          type = JSON.stringify(type).replace(/,/g, "|").slice(1, -1);
+        } else if (typeof type === "string") {
+          if (
+            !type.match(/^[a-z\d\s.\|\<\>\&\(\)\[\]]+$/i) ||
+            type === "[[ ObjectMethod Function ]]"
+          ) {
+            type = "any";
+          }
+        } else {
+          type = "any";
+        }
+        if (!propertyMeta.json?.group) {
           this.__writeMethod("get" + upname, {
+            location: propertyMeta.location,
             returnType: type,
-            description: `Gets the ${propertyName} property`
+            jsdoc: { raw: [`Gets the ${propertyName} property`] },
+            override: propertyMeta.override
           });
-          if (type == "Boolean") {
+
+          if (typeof type === "string" && type.toLowerCase() === "boolean") {
             this.__writeMethod("is" + upname, {
+              location: propertyMeta.location,
               returnType: type,
-              description: `Gets the ${propertyName} property`
+              jsdoc: { raw: [`Gets the ${propertyName} property`] },
+              override: propertyMeta.override
             });
           }
         }
         this.__writeMethod("set" + upname, {
-          params: [{ name: "value", type }],
-          description: `Sets the ${propertyName} property`
-        });
-        this.__writeMethod("reset" + upname, {
-          description: `Resets the ${propertyName} property`
+          location: propertyMeta.location,
+          parameters: [{ name: "value", type }],
+          returnType: type,
+          jsdoc: { raw: [`Sets the ${propertyName} property`] },
+          override: propertyMeta.override
         });
 
-        if (propertyMeta.async) {
+        this.__writeMethod("reset" + upname, {
+          location: propertyMeta.location,
+          jsdoc: { raw: [`Resets the ${propertyName} property`] },
+          override: propertyMeta.override
+        });
+
+        if (propertyMeta.json?.async) {
           this.__writeMethod("get" + upname + "Async", {
-            returnType: type,
-            description: `Gets the ${propertyName} property, asynchronously`
+            location: propertyMeta.location,
+            returnType: "qx.Promise",
+            jsdoc: {
+              raw: [`Gets the ${propertyName} property, asynchronously`]
+            },
+
+            override: propertyMeta.override
           });
-          if (type == "Boolean") {
+
+          if (typeof type === "string" && type.toLowerCase() === "boolean") {
             this.__writeMethod("is" + upname + "Async", {
-              returnType: type,
-              description: `Gets the ${propertyName} property, asynchronously`
+              location: propertyMeta.location,
+              returnType: "qx.Promise",
+              jsdoc: {
+                raw: [`Gets the ${propertyName} property, asynchronously`]
+              },
+
+              override: propertyMeta.override
             });
           }
           this.__writeMethod("set" + upname + "Async", {
-            params: [{ name: "value", type }],
-            description: `Sets the ${propertyName} property`
+            location: propertyMeta.location,
+            parameters: [{ name: "value", type }],
+            returnType: "qx.Promise",
+            jsdoc: { raw: [`Sets the ${propertyName} property`] },
+            override: propertyMeta.override
           });
         }
       }
@@ -264,6 +486,9 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
      * @return {String} the Typescript name, if possible
      */
     getType(typename) {
+      // TODO: use an AST parser to handle modifying complex type expressions
+
+      // handle certain cases
       var defaultType = "any";
       if (!typename || typename == "[[ Function ]]") {
         return defaultType;
@@ -272,20 +497,56 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
         typename = typename.name;
       }
 
-      // Check if we have a mapping for this type
-      var result =
-        qx.tool.compiler.targets.TypeScriptWriter.TYPE_MAPPINGS[typename];
-      if (result) {
-        return result;
+      // handle transformations
+
+      if (typename === "Array") {
+        return "any[]";
       }
 
-      if (this.__metaDb.getMetaData(typename)) {
-        return typename;
+      //mapping
+      const fromTypes = Object.keys(
+        qx.tool.compiler.targets.TypeScriptWriter.TYPE_MAPPINGS
+      );
+
+      const re = new RegExp(
+        `(^|[^.a-zA-Z0-9])(${fromTypes
+          .join("|")
+          .replace("*", "\\*")})($|[^.a-zA-Z0-9<])`
+      );
+
+      // regexp matches overlapping strings, so we need to loop
+      while (typename.match(re)) {
+        typename = typename.replace(
+          re,
+          (match, p1, p2, p3) =>
+            `${p1}${qx.tool.compiler.targets.TypeScriptWriter.TYPE_MAPPINGS[p2]}${p3}`
+        );
       }
+
+      //nullables
+      typename = typename.replace(/\?.*$/, "");
+
+      // handle global types
+      if (
+        (this.__metaDb.getMetaData(typename) && typename.indexOf(".") != -1) ||
+        (this.__metaDb.getMetaData(typename.replace(/\[\]/g, "")) &&
+          typename.replace(/\[\]/g, "").indexOf(".") != -1)
+      ) {
+        return "globalThis." + typename;
+      }
+
+      typename = typename.replace("Promise<", "globalThis.Promise<");
+      typename = typename.replace(
+        /(^|[^.a-zA-Z])(var|\*)([^.a-zA-Z]|$)/g,
+        "$1any$3"
+      );
+
+      // this will do for now, but it will fail on an expression like `Array<Record<string, any>>`
+      typename = typename.replace(/(?<!qx\.data\.)Array<([^>]+)>/g, "($1)[]");
 
       // We don't know the type
       // qx.tool.compiler.Console.error("Unknown type: " + typename);
-      return defaultType;
+      return typename;
     },
 
     /**
@@ -301,85 +562,140 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
     },
 
     /**
-     * @typedef {Object} MethodMeta
+     * @typedef {Object} MethodConfig
+     * @property {object} location
      * @property {Boolean} access
      * @property {Boolean} abstract
      * @property {Boolean} async
      * @property {Boolean} static
      * @property {Boolean} mixin
      * @property {Array} parameters JSDoc parameters and types
-     * @property {*} returnType JSDoc return type
-     * @property {String} description
-     * @property {Boolean} hideMethod
+     * @property {any} returnType JSDoc return type
+     * @property {object} jsdoc
      *
      * @param {String} methodName
-     * @param {MethodMeta} config
+     * @param {MethodConfig} config
      */
     __writeMethod(methodName, config) {
-      var decl = "";
-      var comment = "";
+      var declaration = "";
 
-      if (config.access === "protected") {
-        decl += "protected ";
-      }
-      if (config.access === "private") {
+      if (config.access === "protected" || config.access === "public") {
+        declaration += config.access + " ";
+      } else if (config.access === "private") {
         return;
       }
+
       if (config.static) {
-        decl += "static ";
+        declaration += "static ";
       }
 
       if (config.abstract) {
-        decl += "abstract ";
-        comment += "Abstract ";
+        declaration += "abstract ";
       }
-      if (config.mixin) {
-        comment += "Mixin ";
+
+      if (config.override) {
+        declaration += "override ";
       }
-      decl += this.__escapeMethodName(methodName) + "(";
+
+      declaration += this.__escapeMethodName(methodName) + "(";
 
       if (config.parameters) {
-        decl += this.__serializeParameters(config.parameters);
+        declaration += this.__serializeParameters(config.parameters);
       }
-      decl += ")";
+      declaration += ")";
 
       var returnType = "void";
       if (config.returnType) {
         returnType = this.getType(config.returnType.type);
       }
-      decl += ": " + returnType;
+      declaration += ": " + returnType;
 
-      if (comment) {
-        comment = " // " + comment;
-      }
-
-      if (config.description) {
-        this.write(this.__indent + "/**\n");
-        config.description.split("\n").forEach(line => {
-          this.write(this.__indent + " * " + line + "\n");
-        });
-        this.write(this.__indent + " */\n");
-      }
+      this.__writeJsDoc(config.jsdoc?.raw, config.location);
 
       this.write(
         this.__indent +
-          (config.hideMethod ? "// " : "") +
-          decl +
-          ";" +
-          comment +
-          "\n"
+          `// ${this.__currentClass.className}${
+            config.static ? "#" : "."
+          }${methodName}\n`
+      );
+
+      this.write(this.__indent + declaration + ";" + "\n");
+    },
+
+    /**
+     * Writes the JSDoc content and adds a link to the source code
+     * @param {string[]} jsdoc
+     * @param {object} location
+     */
+    __writeJsDoc(jsdoc, location) {
+      const fixup = source => {
+        source = source
+          // to ensure that links work correctly, include the full class path
+          .replace(
+            /\{@link #([^}]+)\}/g,
+            `{@link ${this.__currentClass.className}.$1}`
+          );
+
+        if (source.match(/@param|@return/)) {
+          const typeExpr =
+            qx.tool.compiler.jsdoc.Parser.getTypeExpression(source);
+          if (typeExpr) {
+            source =
+              source.slice(0, typeExpr.start - 1).trim() +
+              " " +
+              source.slice(typeExpr.end + 1, source.length).trim();
+          }
+          if (source.trim().match(/^\*\s*(@param|@return(s?))$/)) {
+            return "";
+          }
+        }
+        return source.trim();
+      };
+
+      jsdoc = (jsdoc ?? []).map(fixup).filter(line => line.trim().length);
+      if (jsdoc.length) {
+        jsdoc.push("*");
+      }
+
+      const sourceCodePath = path.relative(
+        path.dirname(this.getOutputTo()),
+        path.join(
+          process.cwd(),
+          this.__metaDb.getRootDir(),
+          this.__currentClass.classFilename
+        )
+      );
+
+      // currently, VSCode does not support the use of `%file:%line:%column` in
+      // in-file links, though it supports them in all other contexts.
+      // TODO: find/create issue at microsoft/vscode regarding the above
+      const locationSpecifier = ""; // location?.start
+      //   ? `:${location.start.line}:${location.start.column}`
+      //   : "";
+
+      this.write(
+        `${this.__indent}/**\n` +
+          [
+            ...jsdoc,
+            `* [source code](${sourceCodePath}${locationSpecifier})`,
+            `*/\n`
+          ]
+            .map(line => `${this.__indent} ${line}`)
+            .join("\n")
       );
     },
 
     __serializeParameters(params) {
+      let forceOptional = false;
       let arr = params.map(paramMeta => {
         var decl = paramMeta.name;
         let optional = paramMeta.optional;
         if (paramMeta.name == "varargs") {
           optional = true;
         }
-        if (optional) {
+        if (optional || forceOptional) {
           decl += "?";
+          forceOptional = true;
         }
         decl += ": ";
         let type = "any";
@@ -412,25 +728,31 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
       if (!methods || !Object.keys(methods).length) {
         return;
       }
-      var IGNORE =
-        qx.tool.compiler.targets.TypeScriptWriter.IGNORE[
-          this.__currentClass.className
-        ];
 
-      var comment = isStatic ? "Statics" : "Members";
+      const access = isStatic ? "statics" : "members";
+
       for (var name in methods) {
-        var methodMeta = methods[name];
-        if (methodMeta.type == "function") {
+        let methodMeta = methods[name];
+        if (methodMeta.appearsIn.length) {
+          const superLikeName = methodMeta.appearsIn.slice(-1)[0];
+          const superLikeMeta = this.__metaDb.getMetaData(superLikeName);
+          const superLikeMember = superLikeMeta[access][name];
+          superLikeMember.jsdoc = methodMeta.jsdoc;
+          methodMeta = superLikeMember;
+        }
+
+        if (methodMeta.type === "function") {
           this.__writeMethod(name, {
-            access: methodMeta.access,
-            abstract: classMeta.type != "interface" && methodMeta.abstract,
+            location: methodMeta.location,
+            access: classMeta.type !== "interface" && methodMeta.access,
+            abstract: classMeta.type !== "interface" && methodMeta.abstract,
             async: methodMeta.async,
             static: isStatic,
             mixin: methodMeta.mixin,
             parameters: methodMeta.params,
             returnType: methodMeta.returnType,
-            description: methodMeta.jsdoc?.["@description"]?.[0]?.body,
-            hideMethod: IGNORE && IGNORE.indexOf(name) > -1
+            jsdoc: methodMeta.jsdoc ?? {},
+            override: methodMeta.override
           });
         }
       }
@@ -448,95 +770,44 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
         return '"' + name + '"';
       }
       return name;
-    },
-
-    /**
-     * Write the module declaration if any.
-     */
-    async writeModule(meta) {
-      var moduleName = meta.packageName;
-      if (moduleName) {
-        this.write("declare module " + moduleName + " {\n");
-      } else {
-        this.write("declare ");
-      }
-      await this.writeClass(meta);
-      if (moduleName) {
-        this.write("}\n");
-      }
     }
   },
 
   statics: {
-    IGNORE: {
-      "qx.ui.virtual.core.CellEvent": ["init"],
-      "qx.ui.table.columnmodel.resizebehavior.Default": ["set"],
-      "qx.ui.progressive.renderer.table.Widths": ["set"],
-      "qx.ui.table.columnmodel.resizebehavior": ["set"],
-      "qx.ui.table.pane.CellEvent": ["init"],
-      "qx.ui.mobile.dialog.Manager": ["error"],
-      "qx.ui.mobile.container.Navigation": ["add"],
-      "qx.ui.website.Table": ["filter", "sort"],
-      "qx.ui.website.DatePicker": ["init", "sort"],
-      "qx.event.type.Orientation": ["init"],
-      "qx.event.type.KeySequence": ["init"],
-      "qx.event.type.KeyInput": ["init"],
-      "qx.event.type.GeoPosition": ["init"],
-      "qx.event.type.Drag": ["init"],
-      "qx.bom.request.SimpleXhr": ["addListener", "addListenerOnce"],
-      "qx.event.dispatch.AbstractBubbling": ["dispatchEvent"],
-      "qx.event.dispatch.Direct": ["dispatchEvent"],
-      "qx.event.dispatch.MouseCapture": ["dispatchEvent"],
-      "qx.event.type.Native": ["init"],
-      "qx.html.Element": ["removeListener", "removeListenerById"],
-      "qx.html.Flash": ["setAttribute"],
-      "qx.util.LibraryManager": ["get", "set"]
-    },
-
     TYPE_MAPPINGS: {
-      Widget: "qx.ui.core.Widget",
-      LayoutItem: "qx.ui.core.LayoutItem",
-      AbstractTreeItem: "qx.ui.tree.core.AbstractTreeItem",
-      ILayer: "qx.ui.virtual.core.ILayer",
-      Axis: "qx.ui.virtual.core.Axis",
-      DateFormat: "qx.util.format.DateFormat",
-      LocalizedString: "qx.locale.LocalizedString",
-      Decorator: "qx.ui.decoration.Decorator",
       Event: "qx.event.type.Event",
-      CanvasRenderingContext2D: "CanvasRenderingContext2D",
+      LocalizedString: "qx.locale.LocalizedString",
+      LayoutItem: "qx.ui.core.LayoutItem",
+      Widget: "qx.ui.core.Widget",
+      Decorator: "qx.ui.decoration.Decorator",
       MWidgetController: "qx.ui.list.core.MWidgetController",
+      AbstractTreeItem: "qx.ui.tree.core.AbstractTreeItem",
+      Axis: "qx.ui.virtual.core.Axis",
+      ILayer: "qx.ui.virtual.core.ILayer",
+      Pane: "qx.ui.virtual.core.Pane",
       IDesktop: "qx.ui.window.IDesktop",
       IWindowManager: "qx.ui.window.IWindowManager",
-      Pane: "qx.ui.virtual.core.Pane",
+      DateFormat: "qx.util.format.DateFormat",
       Class: "qx.Class",
       Interface: "qx.Interface",
       Mixin: "qx.Mixin",
       Theme: "qx.Theme",
       Boolean: "boolean",
+      Number: "number",
       String: "string",
-      Color: "string",
-      Font: "string",
-      Function: "Function",
-      Date: "Date",
-      Window: "Window",
-      Document: "Document",
       document: "Document",
       Stylesheet: "StyleSheet",
-      Node: "Node",
-      "Custom check function": "Custom check function",
-      Error: "ErrorImpl",
       Element: "HTMLElement",
-      RegExp: "RegExp",
+      Object: "object",
+      Map: "Record<string, any>",
+      Iterable: "Iterable<any>",
+      Iterator: "Iterator<any>",
+      Array: "Array<any>",
+      RegEx: "RegExp",
+      // TODO: deprecate the below types as they are non-standard aliases for builtin types without any tangible benefit
       var: "any",
-      Array: "qx.data.Array",
-      Object: "any",
-      Map: "IMap",
-      Integer: "number",
-      Number: "number",
-      Double: "number",
-      Float: "number",
-      PositiveInteger: "number",
-      PositiveNumber: "number"
+      "*": "any",
+      arguments: "any"
     }
   }
 });

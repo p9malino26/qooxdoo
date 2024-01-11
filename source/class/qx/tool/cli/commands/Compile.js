@@ -783,6 +783,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
       let metaDb = new qx.tool.compiler.MetaDatabase().set({
         rootDir: this.__metaDir
       });
+
       await metaDb.load();
 
       // Scan all library directories
@@ -792,6 +793,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
         metaDb.getDatabase().libraries[lib.getNamespace()] = {
           sourceDir: dir
         };
+
         await scanImpl(dir, "");
       }
 
@@ -813,7 +815,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
         if (this.__typescriptFile) {
           tsWriter.setOutputTo(this.__typescriptFile);
         } else {
-          tsWriter.setOutputTo(path.join(this.__metaDir, "qooxdoo.d.ts"));
+          tsWriter.setOutputTo(path.join("compiled", "qooxdoo.d.ts"));
         }
         await tsWriter.process();
       }
@@ -868,7 +870,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
      * Processes the configuration from a JSON data structure and creates a Maker
      *
      * @param data {Map}
-     * @return {Maker}
+     * @return {qx.tool.compiler.makers.Maker}
      */
     async createMakersFromConfig(data) {
       const Console = qx.tool.compiler.Console.getInstance();
@@ -1321,6 +1323,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
           Console.warn(
             "The 'typescript' property inside a target definition is deprecated - please see top level 'typescript' and 'meta' properties"
           );
+
           if (this.__typescriptFile) {
             Console.warn(
               "Multiple conflicting locations for the Typescript output - choosing to write to " +
@@ -1704,7 +1707,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
      * Resolves the target class instance from the type name; accepts "source" or "build" or
      * a class name
      * @param type {String}
-     * @returns {Maker}
+     * @returns {qx.tool.compiler.makers.Maker}
      */
     resolveTargetClass(type) {
       if (!type) {
@@ -1734,7 +1737,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
     /**
      * Returns the list of makers to make
      *
-     * @return  {Maker[]}
+     * @return  {qx.tool.compiler.makers.Maker[]}
      */
     getMakers() {
       return this.__makers;
@@ -1747,7 +1750,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
      * configurations.
      *
      * @deprected
-     * @return {Maker}
+     * @return {qx.tool.compiler.makers.Maker}
      */
     getMaker() {
       if (this.__makers.length == 1) {
@@ -1764,7 +1767,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
      * Returns the makers for a given application name
      *
      * @param appName {String} the name of the application
-     * @return {Maker}
+     * @return {qx.tool.compiler.makers.Maker}
      */
     getMakersForApp(appName) {
       return this.__makers.filter(maker => {
@@ -1776,7 +1779,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
     /**
      * Returns a list of libraries which are used
      *
-     * @return {Library[]}
+     * @return {qx.tool.compiler.app.Library[]}
      */
     getLibraries() {
       return this.__libraries;

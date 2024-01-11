@@ -72,6 +72,7 @@ qx.Class.define("qx.tool.compiler.MetaDatabase", {
           classFilename = path.resolve(
             path.join(this.getRootDir(), classFilename)
           );
+
           this.__metaByFilename[classFilename] = meta;
         }
       }
@@ -118,6 +119,9 @@ qx.Class.define("qx.tool.compiler.MetaDatabase", {
       }
       meta = new qx.tool.compiler.MetaExtraction(this.getRootDir());
       let metaData = await meta.parse(filename);
+      if (metaData.className === undefined) {
+        return;
+      }
       this.__metaByClassname[metaData.className] = meta;
       this.__metaByFilename[filename] = meta;
       this.__dirtyClasses[metaData.className] = true;
@@ -160,8 +164,14 @@ qx.Class.define("qx.tool.compiler.MetaDatabase", {
 
         meta.fixupJsDoc(typeResolver);
 
-        let superClass = metaData.superClass;
         this.__fixupMembers(metaData);
+        this.__fixupEntries(metaData, "members");
+
+        // this.__fixupStatics(metaData);
+        this.__fixupEntries(metaData, "statics");
+
+        // this.__fixupProperties(metaData);
+        this.__fixupEntries(metaData, "properties");
 
         let filename =
           this.getRootDir() + "/" + className.replace(/\./g, "/") + ".json";
@@ -215,7 +225,39 @@ qx.Class.define("qx.tool.compiler.MetaDatabase", {
     },
 
     /**
-     * Discovers data about the methods in the heirarchy, eg whether overridden etc
+     * @param {*} metaData class metadata
+     * @param {string} entryKind name of the entry type
+     * @param {string} entryName name of the entry
+     * @returns {string[]} list of classes where the entry appears
+     */
+    __findAppearances(metaData, entryKind, entryName) {
+      const getSuperLikes = meta => [
+        ...(meta.mixins ?? []),
+        ...(meta.superClass ? [meta.superClass] : []),
+        ...(meta.interfaces ?? [])
+      ];
+
+      const resolve = meta => {
+        if (meta[entryKind]?.[entryName]) {
+          appearances.push(meta.className);
+        }
+      };
+
+      const appearances = [];
+      const toResolve = getSuperLikes(metaData);
+      while (toResolve.length) {
+        const currentMeta = this.__metaByClassname[toResolve.shift()];
+        if (currentMeta) {
+          resolve(currentMeta.getMetaData());
+          toResolve.push(...getSuperLikes(currentMeta.getMetaData()));
+        }
+      }
+
+      return appearances;
+    },
+
+    /**
+     * Discovers data about the members in the hierarchy, eg whether overridden etc
      *
      * @param {*} metaData
      */
@@ -223,16 +265,122 @@ qx.Class.define("qx.tool.compiler.MetaDatabase", {
       if (!metaData.members) {
         return;
       }
-
-      for (let methodName in metaData.members) {
-        let methodMeta = metaData.members[methodName];
-        let superMethod = this.__findSuperMethod(metaData, methodName, true);
+      if (metaData.abstract) {
+        for (const itf of metaData.interfaces ?? []) {
+          const itfMembers = this.__metaByClassname[itf]?.getMetaData().members;
+          for (const memberName in itfMembers ?? {}) {
+            const member = itfMembers[memberName];
+            if (!metaData.members[memberName]) {
+              metaData.members[memberName] = {
+                ...member,
+                abstract: true,
+                fromInterface: itf
+              };
+            }
+          }
+        }
+      }
+      for (const methodName in metaData.members) {
+        const methodMeta = metaData.members[methodName];
+        const superMethod = this.__findSuperMethod(metaData, methodName, true);
         if (superMethod) {
-          for (let key in superMethod) {
+          for (const key in superMethod) {
             methodMeta[key] = superMethod[key];
           }
         }
       }
+    },
+
+    // /**
+    //  * Discovers data about the statics in the hierarchy
+    //  *
+    //  * @param {*} metaData
+    //  */
+    // __fixupStatics(metaData) {},
+
+    // /**
+    //  * Discovers data about the properties in the hierarchy
+    //  *
+    //  * @param {*} metaData
+    //  */
+    // __fixupProperties(metaData) {},
+
+    /**
+     * Detects the superlike (class/mixin/interface) appearances and includes the
+     * mixin entries into the class metadata
+     * @param {*} metaData
+     * @param {string} kind
+     */
+    __fixupEntries(metaData, kind) {
+      metaData[kind] ??= {};
+      for (const mixin of metaData.mixins ?? []) {
+        const mixinMeta = this.__metaByClassname[mixin]?.getMetaData();
+        for (const name in mixinMeta?.[kind] ?? {}) {
+          const appearsIn = this.__findAppearances(metaData, kind, name);
+          const meta = qx.lang.Object.clone(mixinMeta[kind][name]);
+          meta.mixin = mixin;
+          meta.appearsIn = appearsIn;
+          metaData[kind][name] = meta;
+        }
+      }
+      for (const name in metaData[kind] ?? {}) {
+        const meta = metaData[kind][name];
+        meta.appearsIn = this.__findAppearances(metaData, kind, name);
+      }
+    },
+
+    /**
+     * Gets a flattened type hierarchy for a class
+     * @param {string|object} metaOrClassName - the classname or the meta data of the class to get the hierarchy for
+     * @returns the type hierarchy
+     *
+     */
+    getHierarchyFlat(metaOrClassName) {
+      const meta =
+        typeof metaOrClassName === "string"
+          ? this.getMetaData(metaOrClassName)
+          : metaOrClassName;
+
+      const data = {
+        className: meta.className,
+        superClasses: {},
+        mixins: {},
+        interfaces: {}
+      };
+
+      let toResolve = [meta];
+
+      while (toResolve.length) {
+        const currentMeta = toResolve.shift();
+
+        if (currentMeta.superClass) {
+          const superClassMeta = this.getMetaData(currentMeta.superClass);
+          if (superClassMeta) {
+            data.superClasses[superClassMeta.className] = superClassMeta;
+            toResolve.push(superClassMeta);
+          }
+        }
+        if (currentMeta.mixins) {
+          for (const mixin of currentMeta.mixins) {
+            const mixinMeta = this.getMetaData(mixin);
+            if (mixinMeta) {
+              data.mixins[mixinMeta.className] = mixinMeta;
+              toResolve.push(mixinMeta);
+            }
+          }
+        }
+        if (currentMeta.interfaces) {
+          for (const iface of currentMeta.interfaces) {
+            const ifaceMeta = this.getMetaData(iface);
+            if (ifaceMeta) {
+              data.interfaces[ifaceMeta.className] = ifaceMeta;
+              toResolve.push(ifaceMeta);
+            }
+          }
+        }
+      }
+
+      return data;
     }
   }
 });
