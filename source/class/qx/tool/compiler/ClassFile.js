@@ -2993,8 +2993,7 @@ qx.Class.define("qx.tool.compiler.ClassFile", {
     /**
      * Adds a required asset
      * @param path
-     */
-    _requireAsset(path) {
+     */ _requireAsset(path) {
       if (path.indexOf("/") < 0 && path.indexOf(".") > -1) {
         path = path.replace(/\./g, "/");
       }
