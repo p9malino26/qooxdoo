@@ -1296,7 +1296,7 @@ qx.Bootstrap.define("qx.Class", {
 
         if (typeof key != "string") {
           throw new Error(
-            "Invalid cached object key for " + key + +" in " + clazz.classname
+            "Invalid cached object key for " + key + " in " + clazz.classname
           );
         }
       }
