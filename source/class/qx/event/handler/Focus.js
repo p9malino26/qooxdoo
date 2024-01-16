@@ -122,47 +122,7 @@ qx.Class.define("qx.event.handler.Focus", {
     /**
      * @type {Map} See: http://msdn.microsoft.com/en-us/library/ms534654(VS.85).aspx
      */
-    FOCUSABLE_ELEMENTS: qx.core.Environment.select("engine.name", {
-      mshtml: {
-        a: 1,
-        body: 1,
-        button: 1,
-        frame: 1,
-        iframe: 1,
-        img: 1,
-        input: 1,
-        object: 1,
-        select: 1,
-        textarea: 1
-      },
-
-      gecko: {
-        a: 1,
-        body: 1,
-        button: 1,
-        frame: 1,
-        iframe: 1,
-        img: 1,
-        input: 1,
-        object: 1,
-        select: 1,
-        textarea: 1
-      },
-
-      opera: {
-        button: 1,
-        input: 1,
-        select: 1,
-        textarea: 1
-      },
-
-      webkit: {
-        button: 1,
-        input: 1,
-        select: 1,
-        textarea: 1
-      }
-    })
+    FOCUSABLE_ELEMENTS: qx.event.handler.FocusCharacteristics.FOCUSABLE_ELEMENTS
   },
 
   /*
@@ -199,32 +159,25 @@ qx.Class.define("qx.event.handler.Focus", {
     // interface implementation
     registerEvent(target, type, capture) {
       // Nothing needs to be done here
-    },
-
-    // interface implementation
+    }, // interface implementation
     unregisterEvent(target, type, capture) {
       // Nothing needs to be done here
     },
-
     /*
     ---------------------------------------------------------------------------
-      FOCUS/BLUR USER INTERFACE
+    FOCUS/BLUR USER INTERFACE
     ---------------------------------------------------------------------------
-    */
-
-    /**
+    */ /**
      * Focuses the given DOM element
      *
      * @param element {Element} DOM element to focus
-     */
-    focus(element) {
+     */ focus(element) {
       // Fixed timing issue with IE, see [BUG #3267]
       if (qx.core.Environment.get("engine.name") == "mshtml") {
         window.setTimeout(function () {
           try {
             // focus element before set cursor position
             element.focus();
-
             // Fixed cursor position issue with IE, only when nothing is selected.
             // See [BUG #3519] for details.
             var selection = qx.bom.Selection.get(element);
@@ -1198,9 +1151,7 @@ qx.Class.define("qx.event.handler.Focus", {
                 }
               } catch (ex) {
                 // ignore 'Unknown runtime error'
-              }
-
-              // The unselectable attribute stops focussing as well.
+              } // The unselectable attribute stops focussing as well.
               // Do this manually.
               try {
                 focusTarget.focus();
@@ -1210,15 +1161,12 @@ qx.Class.define("qx.event.handler.Focus", {
             }
           } else {
             // Stop event for blocking support
-            qx.bom.Event.preventDefault(domEvent);
-
-            // Add unselectable to keep selection
+            qx.bom.Event.preventDefault(domEvent); // Add unselectable to keep selection
             if (!this.__isSelectable(target)) {
               target.unselectable = "on";
             }
           }
         },
-
         webkit(domEvent) {
           var target = qx.bom.Event.getTarget(domEvent);
           var focusTarget = this.__findFocusableElement(target);
@@ -1420,7 +1368,7 @@ qx.Class.define("qx.event.handler.Focus", {
         return true;
       }
 
-      var focusable = qx.event.handler.Focus.FOCUSABLE_ELEMENTS;
+      var focusable = qx.event.handler.FocusCharacteristics.FOCUSABLE_ELEMENTS;
       if (index >= 0 && focusable[el.tagName]) {
         return true;
       }
