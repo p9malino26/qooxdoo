@@ -145,7 +145,9 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
         }
         await this.writeClass(metaData, declared);
       }
-      if (lastPackageName) this.write("}\n");
+      if (lastPackageName) {
+        this.write("}\n");
+      }
       await this.close();
     },
 
@@ -543,13 +545,10 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
         jsdoc.push("*");
       }
 
-      const sourceCodePath = path.relative(
-        path.dirname(this.getOutputTo()),
-        path.join(
-          process.cwd(),
-          this.__metaDb.getRootDir(),
-          this.__currentClass.classFilename
-        )
+      const sourceCodePath = path.join(
+        process.cwd(),
+        this.__metaDb.getRootDir(),
+        this.__currentClass.classFilename
       );
 
       // currently, VSCode does not support the use of `%file:%line:%column` in
