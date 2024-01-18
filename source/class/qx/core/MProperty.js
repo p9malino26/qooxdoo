@@ -67,19 +67,19 @@ qx.Mixin.define("qx.core.MProperty", {
      */
     async setAsync(data, value) {
       const setValueImpl = async (propName, value) => {
-        let upname = qx.Bootstrap.firstUp(prop);
+        let upname = qx.Bootstrap.firstUp(propName);
         let setterName = "set" + upname + "Async";
 
         if (!this[setterName]) {
           setterName = "set" + upname;
-          if (!this[setterName]) {
-            throw new Error(
-              `No such property ${this.classname}.${prop} in ${this}`
-            );
-          }
+        }
+        if (!this[setterName]) {
+          throw new Error(
+            `No such property ${this.classname}.${prop} in ${this}`
+          );
         }
 
-        await this[setterName](data[prop]);
+        await this[setterName](value);
       };
 
       if (qx.Bootstrap.isString(data)) {
