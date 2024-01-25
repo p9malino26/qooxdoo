@@ -77,6 +77,18 @@ qx.Mixin.define("qx.core.MObjectId", {
           "Please use API methods to change owner, not the property"
         );
       }
+      if (qx.core.Environment.get("qx.debug")) {
+        if (oldValue && typeof oldValue.getContentElement == "function") {
+          oldValue
+            .getContentElement()
+            .setAttribute("data-qooxdoo-owner-classname", null);
+        }
+        if (value && typeof value.getContentElement == "function") {
+          value
+            .getContentElement()
+            .setAttribute("data-qooxdoo-owner-classname", value.classname);
+        }
+      }
     },
 
     /**
@@ -89,6 +101,14 @@ qx.Mixin.define("qx.core.MObjectId", {
           owner.__onOwnedObjectIdChange(this, value, oldValue);
         }
         this._cascadeQxObjectIdChanges();
+        if (qx.core.Environment.get("qx.debug")) {
+          if (typeof this.getContentElement == "function") {
+            this.getContentElement().setAttribute(
+              "data-qooxdoo-object-id",
+              value
+            );
+          }
+        }
       }
     },
 

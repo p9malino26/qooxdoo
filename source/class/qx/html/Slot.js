@@ -76,14 +76,18 @@ qx.Class.define("qx.html.Slot", {
   */
 
   members: {
-    /**@override */
+    /**
+     * @Override
+     */
     inject() {
       throw new Error(
         "Cannot inject into <slot>! Injections only work for the top-most element of a JSX expression."
       );
     },
 
-    /**@override */
+    /**
+     * @Override
+     */
     _serializeImpl(serializer) {
       serializer.openTag(this._nodeName);
       serializer.pushQxObject(this);
