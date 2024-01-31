@@ -1063,12 +1063,13 @@ qx.Class.define("qx.test.core.Property", {
     },
 
     testPromises() {
-      const promiseDelay = (delay, fn) => new qx.Promise(resolve => {
-        setTimeout(async () => {
-          await fn();
-          resolve();
-        }, delay);
-      });
+      const promiseDelay = (delay, fn) =>
+        new qx.Promise(resolve => {
+          setTimeout(async () => {
+            await fn();
+            resolve();
+          }, delay);
+        });
 
       qx.Class.define("qxl.TestPromises", {
         extend: qx.core.Object,
@@ -1092,6 +1093,13 @@ qx.Class.define("qx.test.core.Property", {
             async: true,
             apply: "_applyPropTwo",
             event: "changePropTwo"
+          },
+
+          propThree: {
+            init: null,
+            nullable: true,
+            apply: "_applyPropThree",
+            event: "changePropThree"
           }
         },
 
@@ -1109,6 +1117,10 @@ qx.Class.define("qx.test.core.Property", {
               this.state.push("apply-two");
             });
             return "apply-two";
+          },
+          _applyPropThree(value) {
+            this.state.push("apply-three");
+            return "apply-three";
           }
         }
       });
@@ -1127,6 +1139,16 @@ qx.Class.define("qx.test.core.Property", {
           });
           return "event-two";
         });
+        tp.addListener("changePropThree", async evt => {
+          await promiseDelay(1, () => {
+            evt.getTarget().state.push("event-three-async");
+          });
+          return "event-three-async";
+        });
+        tp.addListener("changePropThree", evt => {
+          evt.getTarget().state.push("event-three");
+          return "event-three";
+        });
         return tp;
       };
 
@@ -1134,33 +1156,61 @@ qx.Class.define("qx.test.core.Property", {
         let tmp;
         let tp;
         let result;
-        ("");
 
         tp = createTestPromise();
         tmp = tp.setPropOne(12);
         this.assertTrue(tmp === 12);
-        this.assertArrayEquals(tp.state, []);
+        this.assertArrayEquals([], tp.state);
 
         tp = createTestPromise();
         tmp = tp.setPropOne(qx.Promise.resolve(14));
         this.assertTrue(qx.lang.Type.isPromise(tmp));
-        this.assertArrayEquals(tp.state, []);
+        this.assertArrayEquals([], tp.state);
 
         tp = createTestPromise();
         tmp = tp.setPropTwoAsync(16);
         this.assertTrue(qx.lang.Type.isPromise(tmp));
-        this.assertArrayEquals(tp.state, []);
+        this.assertArrayEquals([], tp.state);
         result = await tmp;
         this.assertTrue(result === 16);
-        this.assertArrayEquals(tp.state, ["apply-two", "event-two"]);
+        this.assertArrayEquals(["apply-two", "event-two"], tp.state);
 
         tp = createTestPromise();
         tmp = tp.setPropTwoAsync(qx.Promise.resolve(18));
         this.assertTrue(qx.lang.Type.isPromise(tmp));
-        this.assertArrayEquals(tp.state, []);
+        this.assertArrayEquals([], tp.state);
         result = await tmp;
         this.assertTrue(result === 18);
-        this.assertArrayEquals(tp.state, ["apply-two", "event-two"]);
+        this.assertArrayEquals(["apply-two", "event-two"], tp.state);
+
+        tp = createTestPromise();
+        await tp.setPropOneAsync(22);
+        this.assertTrue(tp.getPropOne() === 22);
+        this.assertArrayEquals(["apply-one", "event-one"], tp.state);
+
+        tp = createTestPromise();
+        tp.setPropOne(24);
+        tp.setPropTwo(26);
+        tp.setPropThree(28);
+        this.assertTrue(tp.getPropOne() === 24);
+        this.assertTrue(tp.getPropTwo() === 26);
+        this.assertTrue(tp.getPropThree() === 28);
+        this.assertArrayEquals(["apply-three", "event-three"], tp.state);
+
+        tp = createTestPromise();
+        await tp.setAsync({ propOne: 24, propTwo: 26, propThree: 28 });
+        this.assertTrue(tp.getPropOne() === 24);
+        this.assertTrue(tp.getPropTwo() === 26);
+        this.assertTrue(tp.getPropThree() === 28);
+        this.assertArrayEquals(tp.state, [
+          "apply-one",
+          "event-one",
+          "apply-two",
+          "event-two",
+          "apply-three",
+          "event-three",
+          "event-three-async"
+        ]);
       };
       testImpl().then(() => this.resume());
       this.wait(1000);

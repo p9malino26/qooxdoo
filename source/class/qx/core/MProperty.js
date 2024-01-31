@@ -35,51 +35,65 @@ qx.Mixin.define("qx.core.MProperty", {
      * @throws {Error} if a property defined does not exist
      */
     set(data, value) {
-      var setter = qx.core.Property.$$method.set;
+      const setValueImpl = (propName, value) => {
+        let upname = qx.Bootstrap.firstUp(propName);
+        let setterName = "set" + upname;
 
-      if (qx.Bootstrap.isString(data)) {
-        if (!this[setter[data]]) {
-          if (this["set" + qx.Bootstrap.firstUp(data)] != undefined) {
-            this["set" + qx.Bootstrap.firstUp(data)](value);
-            return this;
-          }
-
+        if (!this[setterName]) {
           throw new Error(
-            "No such property: " +
-              data +
-              " in " +
-              this.classname +
-              " (" +
-              this +
-              ")"
+            `No such property: ${propName} in ${this.classname} (${this})`
           );
         }
 
-        return this[setter[data]](value);
-      } else {
-        for (var prop in data) {
-          if (!this[setter[prop]]) {
-            if (this["set" + qx.Bootstrap.firstUp(prop)] != undefined) {
-              this["set" + qx.Bootstrap.firstUp(prop)](data[prop]);
-              continue;
-            }
+        return this[setterName](value);
+      };
 
+      if (qx.Bootstrap.isString(data)) {
+        return setValueImpl(data, value);
+      }
+
+      for (var propName in data) {
+        setValueImpl(propName, data[propName]);
+      }
+      return this;
+    },
+
+    /**
+     * Sets either multiple properties at once by using a property list or
+     * sets one property and its value by the first and second argument.
+     * As a fallback, if no generated property setter could be found, a
+     * handwritten setter will be searched and invoked if available.
+     *
+     * @param data {Object | String} a map of property values. The key is the name of the property.
+     * @param value {var?} the value, only used when <code>data</code> is a string.
+     * @return {Promise<*>} Returns this instance if <code>data</code> is a map
+     *   or a non-generated setter is called; otherwise returns <code>value</code>.
+     * @throws {Error} if a property defined does not exist
+     */
+    async setAsync(data, value) {
+      const setValueImpl = async (propName, value) => {
+        let upname = qx.Bootstrap.firstUp(propName);
+        let setterName = "set" + upname + "Async";
+
+        if (qx.core.Environment.get("qx.debug")) {
+          if (!this[setterName]) {
             throw new Error(
-              "No such property: " +
-                prop +
-                " in " +
-                this.classname +
-                " (" +
-                this +
-                ")"
+              `No such property: ${propName} in ${this.classname} (${this})`
             );
           }
-
-          this[setter[prop]](data[prop]);
         }
 
-        return this;
+        return await this[setterName](value);
+      };
+
+      if (qx.Bootstrap.isString(data)) {
+        return await setValueImpl(data, value);
       }
+
+      for (let propName in data) {
+        await setValueImpl(propName, data[propName]);
+      }
+      return this;
     },
 
     /**

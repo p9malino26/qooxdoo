@@ -870,6 +870,10 @@ qx.Class.define("qx.event.Manager", {
      * {@link #addListener}. After dispatching the event object will be pooled
      * for later reuse or disposed.
      *
+     * Unlike `dispatchEventAsync` this method will not wait fort async property
+     * handlers to complete before returning - this means that only synchronous
+     * event handlers will have the opportunity to prevent the event default action.
+     *
      * @param target {Object} Any valid event target
      * @param event {qx.event.type.Event} The event object to dispatch. The event
      *     object must be obtained using {@link qx.event.Registration#createEvent}
@@ -879,6 +883,60 @@ qx.Class.define("qx.event.Manager", {
      * @throws {Error} if there is no dispatcher for the event
      */
     dispatchEvent(target, event) {
+      let promise = this.__dispatchEventImpl(target, event);
+
+      // check whether "preventDefault" has been called
+      var preventDefault = event.getDefaultPrevented();
+      if (qx.lang.Type.isPromise(promise)) {
+        promise.then(() => qx.event.Pool.getInstance().poolObject(event));
+      } else {
+        qx.event.Pool.getInstance().poolObject(event);
+      }
+
+      return !preventDefault;
+    },
+
+    /**
+     * Dispatches an event object using the qooxdoo event handler system. The
+     * event will only be visible in event listeners attached using
+     * {@link #addListener}. After dispatching the event object will be pooled
+     * for later reuse or disposed.
+     *
+     * Unlike `dispatchEvent`, this method returns a promise and waits for any
+     * async event handlers to resolve before discovering whether the event
+     * default was prevented or not.
+     *
+     * @param target {Object} Any valid event target
+     * @param event {qx.event.type.Event} The event object to dispatch. The event
+     *     object must be obtained using {@link qx.event.Registration#createEvent}
+     *     and initialized using {@link qx.event.type.Event#init}.
+     * @return {qx.Promise<Boolean>} a promise which resolves to whether the event
+     *    default was prevented or not - true when the event was NOT prevented.
+     * @throws {Error} if there is no dispatcher for the event
+     */
+    async dispatchEventAsync(target, event) {
+      await this.__dispatchEventImpl(target, event);
+
+      var preventDefault = event.getDefaultPrevented();
+      qx.event.Pool.getInstance().poolObject(event);
+
+      return !preventDefault;
+    },
+
+    /**
+     * Dispatches an event object using the qooxdoo event handler system. The
+     * event will only be visible in event listeners attached using
+     * {@link #addListener}. After dispatching the event object will be pooled
+     * for later reuse or disposed.
+     *
+     * @param target {Object} Any valid event target
+     * @param event {qx.event.type.Event} The event object to dispatch. The event
+     *     object must be obtained using {@link qx.event.Registration#createEvent}
+     *     and initialized using {@link qx.event.type.Event#init}.
+     * @return {qx.Promise?} the result of any asynchronous event handlers
+     * @throws {Error} if there is no dispatcher for the event
+     */
+    __dispatchEventImpl(target, event) {
       if (qx.core.Environment.get("qx.debug")) {
         var msg =
           "Could not dispatch event '" +
@@ -932,7 +990,6 @@ qx.Class.define("qx.event.Manager", {
       var type = event.getType();
 
       if (!event.getBubbles() && !this.hasListener(target, type)) {
-        qx.event.Pool.getInstance().poolObject(event);
         return true;
       }
 
@@ -946,17 +1003,15 @@ qx.Class.define("qx.event.Manager", {
 
       // Loop through the dispatchers
       var dispatched = false;
-      var tracker = {};
+      let promise = null;
 
       for (var i = 0, l = classes.length; i < l; i++) {
         instance = this.getDispatcher(classes[i]);
 
         // Ask if the dispatcher can handle this event
         if (instance.canDispatchEvent(target, event, type)) {
-          qx.event.Utils.track(
-            tracker,
-            instance.dispatchEvent(target, event, type)
-          );
+          let tmp = instance.dispatchEvent(target, event, type);
+          promise = qx.event.Utils.queuePromise(promise, tmp);
 
           dispatched = true;
           break;
@@ -973,15 +1028,7 @@ qx.Class.define("qx.event.Manager", {
         return true;
       }
 
-      return qx.event.Utils.then(tracker, function () {
-        // check whether "preventDefault" has been called
-        var preventDefault = event.getDefaultPrevented();
-
-        // Release the event instance to the event pool
-        qx.event.Pool.getInstance().poolObject(event);
-
-        return !preventDefault;
-      });
+      return promise;
     },
 
     /**
