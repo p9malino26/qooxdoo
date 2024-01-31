@@ -585,10 +585,8 @@ qx.Bootstrap.define("qx.core.Property", {
             "resetRuntime" + upname
           ];
 
-          if (config.async) {
-            allNames.push("get" + upname + "Async");
-            allNames.push("set" + upname + "Async");
-          }
+          allNames.push("get" + upname + "Async");
+          allNames.push("set" + upname + "Async");
           if (
             config.inheritable ||
             config.apply ||
@@ -659,42 +657,41 @@ qx.Bootstrap.define("qx.core.Property", {
           ".apply(this, arguments);"
       );
 
-      if (config.async) {
-        if (qx.core.Environment.get("qx.debug")) {
-          if (members.hasOwnProperty(getName + "Async")) {
-            this.error(
-              "Asynchronous property " +
-                clazz.classname +
-                "." +
-                name +
-                " is replacing " +
-                getName +
-                "Async() method in same class"
-            );
-          } else if (members[getName + "Async"] !== undefined) {
-            this.warn(
-              "Asynchronous property " +
-                clazz.classname +
-                "." +
-                name +
-                " is overriding " +
-                getName +
-                "Async() method"
-            );
-          }
+      if (qx.core.Environment.get("qx.debug")) {
+        if (members.hasOwnProperty(getName + "Async")) {
+          this.error(
+            "Asynchronous property " +
+              clazz.classname +
+              "." +
+              name +
+              " is replacing " +
+              getName +
+              "Async() method in same class"
+          );
+        } else if (members[getName + "Async"] !== undefined) {
+          this.warn(
+            "Asynchronous property " +
+              clazz.classname +
+              "." +
+              name +
+              " is overriding " +
+              getName +
+              "Async() method"
+          );
         }
-        method.getAsync[name] = getName + "Async";
-        members[method.getAsync[name]] = new Function(
-          "this." +
-            getName +
-            ".$$install && this." +
-            getName +
-            ".$$install.call(this);" +
-            "return this." +
-            getName +
-            "Async.apply(this, arguments);"
-        );
       }
+      method.getAsync[name] = getName + "Async";
+      members[method.getAsync[name]] = new Function(
+        "this." +
+          getName +
+          ".$$install && this." +
+          getName +
+          ".$$install.call(this);" +
+          "return this." +
+          getName +
+          "Async.apply(this, arguments);"
+      );
+
       members[method.get[name]].$$install = function () {
         qx.core.Property.__installOptimizedGetter(
           clazz,
@@ -703,14 +700,12 @@ qx.Bootstrap.define("qx.core.Property", {
           arguments
         );
 
-        if (config.async) {
-          qx.core.Property.__installOptimizedGetter(
-            clazz,
-            name,
-            "getAsync",
-            arguments
-          );
-        }
+        qx.core.Property.__installOptimizedGetter(
+          clazz,
+          name,
+          "getAsync",
+          arguments
+        );
       };
 
       var setName = (method.set[name] = "set" + upname);
@@ -722,48 +717,44 @@ qx.Bootstrap.define("qx.core.Property", {
       members[setName] = new Function(strSetCode);
 
       method.setAsync[name] = "set" + upname + "Async";
-      if (config.async) {
-        if (qx.core.Environment.get("qx.debug")) {
-          if (members.hasOwnProperty(setName + "Async")) {
-            this.error(
-              "Asynchronous property " +
-                clazz.classname +
-                "." +
-                name +
-                " is replacing " +
-                setName +
-                "Async() method in same class"
-            );
-          } else if (members[setName + "Async"] !== undefined) {
-            this.warn(
-              "Asynchronous property " +
-                clazz.classname +
-                "." +
-                name +
-                " is overriding " +
-                setName +
-                "Async() method"
-            );
-          }
+      if (qx.core.Environment.get("qx.debug")) {
+        if (members.hasOwnProperty(setName + "Async")) {
+          this.error(
+            "Asynchronous property " +
+              clazz.classname +
+              "." +
+              name +
+              " is replacing " +
+              setName +
+              "Async() method in same class"
+          );
+        } else if (members[setName + "Async"] !== undefined) {
+          this.warn(
+            "Asynchronous property " +
+              clazz.classname +
+              "." +
+              name +
+              " is overriding " +
+              setName +
+              "Async() method"
+          );
         }
-        members[setName + "Async"] = new Function(
-          "this." +
-            setName +
-            ".$$install && this." +
-            setName +
-            ".$$install.call(this);" +
-            "return this." +
-            setName +
-            "Async.apply(this, arguments);"
-        );
       }
+      members[setName + "Async"] = new Function(
+        "this." +
+          setName +
+          ".$$install && this." +
+          setName +
+          ".$$install.call(this);" +
+          "return this." +
+          setName +
+          "Async.apply(this, arguments);"
+      );
       method.setImpl[name] = "$$set" + upname + "Impl";
       members[setName].$$install = function () {
         qx.core.Property.__installOptimizedSetter(clazz, name, "set");
         qx.core.Property.__installOptimizedSetter(clazz, name, "setImpl");
-        if (config.async) {
-          qx.core.Property.__installOptimizedSetter(clazz, name, "setAsync");
-        }
+        qx.core.Property.__installOptimizedSetter(clazz, name, "setAsync");
       };
 
       method.reset[name] = "reset" + upname;
@@ -994,7 +985,15 @@ qx.Bootstrap.define("qx.core.Property", {
 
         // Overriding temporary wrapper
         try {
-          clazz.prototype[store] = new Function("value", code.join(""));
+          if (variant == "setImpl") {
+            clazz.prototype[store] = new Function(
+              "value",
+              "async",
+              code.join("")
+            );
+          } else {
+            clazz.prototype[store] = new Function("value", code.join(""));
+          }
         } catch (ex) {
           throw new Error(
             "Malformed generated code to unwrap method: " +
@@ -1191,13 +1190,15 @@ qx.Bootstrap.define("qx.core.Property", {
         code.push(
           "return qx.Promise.resolve(this.$$set" +
             upname +
-            "Impl.apply(this, arguments));"
+            "Impl.call(this, value, true));"
         );
 
         return code;
       } else if (variant == "set") {
         code.push(
-          "this.$$set" + upname + "Impl.apply(this, arguments);",
+          "if (arguments.length != 1) debugger; this.$$set" +
+            upname +
+            "Impl.call(this, value, false);",
           "return value;"
         );
 
@@ -1290,10 +1291,11 @@ qx.Bootstrap.define("qx.core.Property", {
         ) {
           code.push(
             "var promise;",
-            "if (qx.Promise.isPromise(value)) ",
-            "promise = value.then(set.bind(this));",
-            "else ",
-            "promise = set.apply(this, arguments);"
+            "if (qx.Promise.isPromise(value)) { ",
+            "  var self = this;",
+            "  promise = value.then(function(value) { return set.call(self, value); });",
+            "} else ",
+            "promise = set.call(this, value);"
           );
 
           if (variant == "setImpl") {
@@ -1302,7 +1304,7 @@ qx.Bootstrap.define("qx.core.Property", {
             code.push("return value;");
           }
         } else {
-          code.push("set.apply(this, arguments);", "return value;");
+          code.push("set.call(this, value);", "return value;");
         }
       }
 
@@ -1409,9 +1411,7 @@ qx.Bootstrap.define("qx.core.Property", {
             '","',
             variant,
             '",value);'
-          );
-
-          // Undefined check
+          ); // Undefined check
           code.push(
             'if(value===undefined)prop.error(this,2,"',
             name,
@@ -1432,9 +1432,7 @@ qx.Bootstrap.define("qx.core.Property", {
       } else {
         if (!config.nullable || config.check || config.inheritable) {
           code.push("var prop=qx.core.Property;");
-        }
-
-        // Undefined check
+        } // Undefined check
         if (variant === "setImpl") {
           code.push(
             'if(value===undefined)prop.error(this,2,"',
@@ -1992,105 +1990,72 @@ qx.Bootstrap.define("qx.core.Property", {
         // Fire event
         if (config.event) {
           code.push(
-            "var reg=qx.event.Registration;",
-            "if(reg.hasListener(self, '",
-            config.event,
-            "')) {",
-            "promise = reg.fireEventAsync(self, '",
-            config.event,
-            "', qx.event.type.Data, [computed, old]",
-            ");",
-            "promise = promise.then(function() { return computed; });",
-            "}",
-            "if(reg.hasListener(self, '",
-            config.event,
-            "Async'))",
-            "promise = promise.then(function() {",
-            "return reg.fireEventAsync(self, '",
-            config.event,
-            "Async', qx.event.type.Data, [promiseData, old]",
-            ");",
-            "});"
+            `var reg=qx.event.Registration;`,
+            `if(reg.hasListener(self, '${config.event}')) {`,
+            `  promise = reg.fireEventAsync(self, '${config.event}', qx.event.type.Data, [computed, old]);`,
+            `  promise = promise.then(function() { return computed; });`,
+            `}`
           );
         }
 
         // Emit code to update the inherited values of child objects
         if (refresh) {
           code.push(
-            "var a=self._getChildren();",
-            "if(a)",
-            "for(var i=0,l=a.length;i<l;i++){",
-            "if(a[i].",
-            this.$$method.refresh[name],
-            ")",
-            "a[i].",
-            this.$$method.refresh[name],
-            "(backup);",
-            "}"
+            `var a = self._getChildren();`,
+            `if (a) {`,
+            `  for(var i=0, l=a.length; i<l; i++){`,
+            `    if(a[i].${this.$$method.refresh[name]})`,
+            `      a[i].${this.$$method.refresh[name]}(backup);`,
+            `  }`,
+            `}`
           );
         }
 
-        code.push("return promise;", "}");
+        code.push(`return promise;`, `}`);
       } else {
-        code.push("function fire() {", "  var tracker={};");
+        code.push(`function fire() {`, `  var tracker={};`);
 
         // Fire event
         if (config.event) {
-          code.push(
-            "var reg=qx.event.Registration;",
-
-            "if(reg.hasListener(self, '",
-            config.event,
-            "'))",
-            "qx.event.Utils.track(tracker, reg.fireEvent(self, '",
-            config.event,
-            "', qx.event.type.Data, [computed, old]",
-            "));"
-          );
-
-          if (qx.core.Environment.get("qx.promise")) {
-            code.push(
-              "if(reg.hasListener(self, '",
-              config.event,
-              "Async'))",
-              "qx.event.Utils.then(tracker, function() {\n" +
-                "  return reg.fireEventAsync(self, '",
-              config.event,
-              "Async', qx.event.type.Data, [qx.Promise.resolve(computed), old]",
-              ");\n" + "});"
-            );
+          let strFireEvent = "reg.fireEvent";
+          if (variant === "setImpl") {
+            strFireEvent = "async ? reg.fireEventAsync : reg.fireEvent";
           }
+          code.push(
+            `var reg=qx.event.Registration;`,
+            `var fireEvent=${strFireEvent};`,
+            `if (reg.hasListener(self, '${config.event}')) {`,
+            `  qx.event.Utils.track(tracker, fireEvent(self, '${config.event}', qx.event.type.Data, [computed, old]));`,
+            `}`
+          );
         }
         // Emit code to update the inherited values of child objects
         if (refresh) {
           code.push(
-            "var a=self._getChildren();",
-            "if(a)",
-            "for(var i=0,l=a.length;i<l;i++){",
-            "if(a[i].",
-            this.$$method.refresh[name],
-            ")",
-            "a[i].",
-            this.$$method.refresh[name],
-            "(backup);",
-            "}"
+            `var a=self._getChildren();`,
+            `if(a) {`,
+            `  for(var i=0,l=a.length;i<l;i++){`,
+            `    if(a[i].${this.$$method.refresh[name]})`,
+            `      a[i].${this.$$method.refresh[name]}(backup);`,
+            `  }`,
+            `}`
           );
         }
 
         code.push(
-          "if (tracker.promise)\n",
-          "  return tracker.promise.then(function() { return computed; });",
-          "return computed;",
-          "}"
+          `if (tracker.promise)\n`,
+          `  return tracker.promise.then(function() { return computed; });`,
+          `return computed;`,
+          `}`
         );
       }
 
       if (qx.core.Environment.get("qx.promise")) {
         code.push(
-          "if(qx.Promise.isPromise(promise)) " + "return promise.then(fire); "
+          `if(qx.Promise.isPromise(promise)) return promise.then(fire); `
         );
       }
-      code.push("return fire();");
+      code.push(`return fire();`);
     }
   }
 });

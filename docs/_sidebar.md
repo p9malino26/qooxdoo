@@ -20,7 +20,7 @@
         - [Mixins](/core/mixin_quickref.md)
     - [Object IDs](/core/object_id.md)
   - [Properties](/core/understanding_properties.md)
-    - [Defining properties](/core/defining_properties.md)
+    - [Defining properties](/core/understanding_properties.md)
     - [Behavior](/core/property_behavior.md)
     - [Features](/core/property_features.md)
     - [Property Quickref](/core/properties_quickref.md)

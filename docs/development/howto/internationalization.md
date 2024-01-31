@@ -132,7 +132,7 @@ by wrapping them in an appropriate `this.tr()` function call: If init values of
 dynamic properties (core/understanding_properties) are meant to be localizable,
 the init value has either to be set in the class constructor using `this.tr()`,
 or `qx.locale.Manager.tr()` has to be used inside the property declaration. See
-documentation on [Defining an init value](../../core/defining_properties.md#defining-an-init-value) for details.
+documentation on [Defining an init value](../../core/understanding_properties.md#defining-an-init-value) for details.
 
 #### trn
 
