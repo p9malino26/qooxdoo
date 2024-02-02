@@ -681,16 +681,18 @@ qx.Bootstrap.define("qx.core.Property", {
         }
       }
       method.getAsync[name] = getName + "Async";
-      members[method.getAsync[name]] = new Function(
-        "this." +
-          getName +
-          ".$$install && this." +
-          getName +
-          ".$$install.call(this);" +
-          "return this." +
-          getName +
-          "Async.apply(this, arguments);"
-      );
+      if (members[method.getAsync[name]] === undefined) {
+        members[method.getAsync[name]] = new Function(
+          "this." +
+            getName +
+            ".$$install && this." +
+            getName +
+            ".$$install.call(this);" +
+            "return this." +
+            getName +
+            "Async.apply(this, arguments);"
+        );
+      }
 
       members[method.get[name]].$$install = function () {
         qx.core.Property.__installOptimizedGetter(
@@ -1007,7 +1009,15 @@ qx.Bootstrap.define("qx.core.Property", {
           );
         }
       } else {
-        clazz.prototype[store] = new Function("value", code.join(""));
+        if (variant == "setImpl") {
+          clazz.prototype[store] = new Function(
+            "value",
+            "async",
+            code.join("")
+          );
+        } else {
+          clazz.prototype[store] = new Function("value", code.join(""));
+        }
       }
 
       // Enable profiling code
