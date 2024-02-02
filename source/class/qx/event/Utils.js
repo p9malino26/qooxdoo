@@ -85,7 +85,7 @@ qx.Class.define("qx.event.Utils", {
             };
           })(fn);
         }
-        return this.then(tracker, fn);
+        return qx.event.Utils.then(tracker, fn);
       },
       false(tracker, fn) {
         if (typeof fn === "function") {
@@ -133,10 +133,9 @@ qx.Class.define("qx.event.Utils", {
         }
         if (tracker.promise) {
           if (qx.lang.Type.isPromise(fn)) {
-            this.__push(tracker, tracker.promise.then(fn));
+            qx.event.Utils.__push(tracker, tracker.promise.then(fn));
           } else {
-            var self = this;
-            this.__push(
+            qx.event.Utils.__push(
               tracker,
               tracker.promise.then(function (result) {
                 if (tracker.rejected) {
@@ -146,36 +145,36 @@ qx.Class.define("qx.event.Utils", {
                 if (typeof fn == "function") {
                   result = fn(tracker.result);
                   if (qx.lang.Type.isPromise(result)) {
-                    return this.__thenPromise(tracker, result);
+                    return qx.event.Utils.__thenPromise(tracker, result);
                   }
                 } else {
                   result = fn;
                 }
                 if (result === qx.event.Utils.ABORT) {
-                  return self.reject(tracker);
+                  return qx.event.Utils.reject(tracker);
                 }
                 return result;
               })
             );
           }
-          this.__addCatcher(tracker);
+          qx.event.Utils.__addCatcher(tracker);
           return tracker.promise;
         }
         if (qx.lang.Type.isPromise(fn)) {
-          return this.__thenPromise(tracker, fn);
+          return qx.event.Utils.__thenPromise(tracker, fn);
         }
         var result;
         if (typeof fn == "function") {
           result = fn(tracker.result);
           if (qx.lang.Type.isPromise(result)) {
-            return this.__thenPromise(tracker, result);
+            return qx.event.Utils.__thenPromise(tracker, result);
           }
         } else {
           result = fn;
         }
         tracker.result = result;
         if (result === qx.event.Utils.ABORT) {
-          return this.reject(tracker);
+          return qx.event.Utils.reject(tracker);
         }
 
         return result;
@@ -187,7 +186,7 @@ qx.Class.define("qx.event.Utils", {
         }
         var result = (tracker.result = fn(tracker.result));
         if (result === qx.event.Utils.ABORT) {
-          return this.reject(tracker);
+          return qx.event.Utils.reject(tracker);
         }
         return result;
       }
@@ -202,16 +201,16 @@ qx.Class.define("qx.event.Utils", {
      */
     __thenPromise(tracker, newPromise) {
       if (tracker.promise) {
-        this.__push(
+        qx.event.Utils.__push(
           tracker,
           tracker.promise.then(function () {
             return newPromise;
           })
         );
       } else {
-        this.__push(tracker, newPromise);
+        qx.event.Utils.__push(tracker, newPromise);
       }
-      this.__addCatcher(tracker);
+      qx.event.Utils.__addCatcher(tracker);
       return tracker.promise;
     },
 
@@ -231,8 +230,8 @@ qx.Class.define("qx.event.Utils", {
       if (tracker.promise) {
         throw new Error("Rejecting Event");
       }
-      var result = this.__catcher(tracker);
-      return result === undefined ? this.ABORT : result;
+      var result = qx.event.Utils.__catcher(tracker);
+      return result === undefined ? qx.event.Utils.ABORT : result;
     },
 
     /**
@@ -243,9 +242,9 @@ qx.Class.define("qx.event.Utils", {
     __addCatcher(tracker) {
       if (tracker.promise && tracker.catch) {
         if (!tracker.promise["qx.event.Utils.hasCatcher"]) {
-          this.__push(
+          qx.event.Utils.__push(
             tracker,
-            tracker.promise.catch(this.__catcher.bind(this, tracker))
+            tracker.promise.catch(qx.event.Utils.__catcher.bind(this, tracker))
           );
 
           tracker.promise["qx.event.Utils.hasCatcher"] = true;
@@ -302,7 +301,7 @@ qx.Class.define("qx.event.Utils", {
       } else {
         tracker.catch = fn;
       }
-      this.__addCatcher(tracker);
+      qx.event.Utils.__addCatcher(tracker);
     },
 
     /**
@@ -355,7 +354,7 @@ qx.Class.define("qx.event.Utils", {
           }
 
           if (!ignoreAbort && result === qx.event.Utils.ABORT) {
-            return this.reject(tracker);
+            return qx.event.Utils.reject(tracker);
           }
         }
 
@@ -367,7 +366,7 @@ qx.Class.define("qx.event.Utils", {
         for (var index = 0; index < arr.length; index++) {
           var result = fn(arr[index], index);
           if (!ignoreAbort && result === qx.event.Utils.ABORT) {
-            return this.reject(tracker);
+            return qx.event.Utils.reject(tracker);
           }
         }
       }
