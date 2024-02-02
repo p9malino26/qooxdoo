@@ -141,9 +141,8 @@ qx.Class.define("qx.event.Utils", {
                 if (tracker.rejected) {
                   return null;
                 }
-                var result;
                 if (typeof fn == "function") {
-                  result = fn(tracker.result);
+                  result = fn(result);
                   if (qx.lang.Type.isPromise(result)) {
                     return qx.event.Utils.__thenPromise(tracker, result);
                   }
