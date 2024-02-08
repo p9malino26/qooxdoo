@@ -680,12 +680,6 @@ qx.Bootstrap.define("qx.core.Property", {
           );
         }
       }
-      if (
-        name == "document" &&
-        clazz.classname == "com.zenesis.grasshopper.security.User"
-      ) {
-        debugger;
-      }
       method.getAsync[name] = getName + "Async";
       if (members[method.getAsync[name]] === undefined) {
         members[method.getAsync[name]] = new Function(
@@ -1418,6 +1412,7 @@ qx.Bootstrap.define("qx.core.Property", {
             variant,
             '",value);'
           );
+
           // Undefined check
           code.push(
             'if(value===undefined)prop.error(this,2,"',
