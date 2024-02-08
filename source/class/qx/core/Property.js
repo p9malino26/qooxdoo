@@ -680,6 +680,7 @@ qx.Bootstrap.define("qx.core.Property", {
           );
         }
       }
+
       method.getAsync[name] = getName + "Async";
       if (members[method.getAsync[name]] === undefined) {
         members[method.getAsync[name]] = new Function(
