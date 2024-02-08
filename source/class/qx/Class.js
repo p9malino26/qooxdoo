@@ -235,9 +235,9 @@ qx.Bootstrap.define("qx.Class", {
 
       // Members, properties, events and mixins are only allowed for non-static classes
       if (config.extend) {
-        // Attach properties
-        if (config.properties) {
-          this.__addProperties(clazz, config.properties, true);
+        // Process events
+        if (config.events) {
+          this.__addEvents(clazz, config.events, true);
         }
 
         // Attach members
@@ -245,9 +245,9 @@ qx.Bootstrap.define("qx.Class", {
           this.__addMembers(clazz, config.members, true, true, false);
         }
 
-        // Process events
-        if (config.events) {
-          this.__addEvents(clazz, config.events, true);
+        // Attach properties
+        if (config.properties) {
+          this.__addProperties(clazz, config.properties, true);
         }
 
         //Process cached objects
@@ -1188,15 +1188,11 @@ qx.Bootstrap.define("qx.Class", {
           // Nothing
         }
       }
-      clazz.basename = basename;
-
-      // Store type info
+      clazz.basename = basename; // Store type info
       clazz.$$type = "Class";
       if (type) {
         clazz.$$classtype = type;
-      }
-
-      // Attach toString
+      } // Attach toString
       if (!clazz.hasOwnProperty("toString")) {
         clazz.toString = this.genericToString;
       }
@@ -1762,14 +1758,14 @@ qx.Bootstrap.define("qx.Class", {
           this.__addEvents(clazz, entry.$$events, patch);
         }
 
-        // Attach properties (Properties are already readonly themselves, no patch handling needed)
-        if (entry.$$properties) {
-          this.__addProperties(clazz, entry.$$properties, patch);
-        }
-
         // Attach members (Respect patch setting, but dont apply base variables)
         if (entry.$$members) {
           this.__addMembers(clazz, entry.$$members, patch, patch, patch);
+        }
+
+        // Attach properties (Properties are already readonly themselves, no patch handling needed)
+        if (entry.$$properties) {
+          this.__addProperties(clazz, entry.$$properties, patch);
         }
       }
 
