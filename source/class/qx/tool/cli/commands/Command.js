@@ -76,19 +76,15 @@ qx.Class.define("qx.tool.cli.commands.Command", {
     processArgs(argv) {
       // Nothing
     },
-
     /**
      * Returns the parsed command line arguments
      * @return {Object}
-     */
-    getArgs() {
+     */ getArgs() {
       return this.argv;
     },
-
     /**
      * Check if the current application needs to be migrated
-     */
-    async checkMigrations() {
+     */ async checkMigrations() {
       let appQxVersion;
       try {
         appQxVersion = await this.getAppQxVersion();
@@ -147,7 +143,8 @@ qx.Class.define("qx.tool.cli.commands.Command", {
      * {@link qqx.tool.config.Utils#getQxVersion()}. Throws if no version can be
      * determined.
      *
-     * @throws {qx.tool.utils.Utils.UserError}
+     * @throws {typeof qx.tool.utils.Utils.UserError}
+     *
      * @return {Promise<String>}
      */
     getQxVersion() {
@@ -165,8 +162,9 @@ qx.Class.define("qx.tool.cli.commands.Command", {
      * the command and supplied by the user). Throws if no version can be
      * determined.
      *
+     * @throws {typeof qx.tool.utils.Utils.UserError}
+     *
      * @return {Promise<String>}
-     * @throws {qx.tool.utils.Utils.UserError}
      */
     getAppQxVersion() {
       try {
