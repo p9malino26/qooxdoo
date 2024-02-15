@@ -76,19 +76,15 @@ qx.Class.define("qx.tool.cli.commands.Command", {
     processArgs(argv) {
       // Nothing
     },
-
     /**
      * Returns the parsed command line arguments
      * @return {Object}
-     */
-    getArgs() {
+     */ getArgs() {
       return this.argv;
     },
-
     /**
      * Check if the current application needs to be migrated
-     */
-    async checkMigrations() {
+     */ async checkMigrations() {
       let appQxVersion;
       try {
         appQxVersion = await this.getAppQxVersion();

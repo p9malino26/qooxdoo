@@ -4,6 +4,9 @@ Qooxdoo comes with its own convenient and sophisticated property management
 system. In order to understand its power we will first take a look at the
 ordinary property handling in plain JavaScript first.
 
+> :memo: Please take a look at `property_features` first to get a compact overview of
+> the available features.
+
 ## Ordinary Property Handling
 
 Let's say we have a property `width` for an object `obj`.
@@ -257,6 +260,7 @@ exception because the computed value is not (yet) defined.
 > property by calling an initializing function `this.initMyProperty(value)` in
 > the constructor. See below for details.
 
+Please also have a look at the [Quick Reference](properties_quickref) .
 ## Handling changes of property values
 
 You have multiple possibilities to react on each property change. With _change_
@@ -299,9 +303,15 @@ members :
 
 The applying method is only called when the value has changed.
 
-> :memo: When using reference data types like `Object` or `Array` the apply method is
-> **always** called, since these are different objects and indeed different
-> values. This is JavaScript functionality and not Qooxdoo specific.
+
+> :memo: When using reference types like `Object` or `Array`, the apply method
+> is only called if the **object** or **array** itself is different. Changing
+> members of an object, or elements of an array, will not, by default, cause 
+> the apply method to be called, even if that object or array is given back
+> to the setter, because the value hasn't actually changed.
+> If you want the apply method to be called every time the setter is called,
+> you can specify an `isEqual` function for the property that always returns
+> `false`, e.g., `isEqual : (a, b) => false`.
 
 For a more technical description, take a look at the
 [API documentation of qx.core.Property](apps://apiviewer/#qx.core.Property)
@@ -366,10 +376,11 @@ types" like `Array`, `Object`) that should not be shared among instances, but be
 unique on instance level.
 
 Another scenario would be to use a localizable init value when
-internationalizing your application (development/internationalization): Because
-`this.tr()` cannot be used in the property definition, you may either use the
-static `qx.locale.Manager.tr()` there instead, or use `this.tr()` in the call of
-the initializing function in the constructor.
+[internationalizing your application](../development/howto/internationalization):
+Because `this.tr()` cannot be used in the property definition, you may either
+use the static `qx.locale.Manager.tr()` there instead, or use `this.tr()` in the
+call of the initializing function in the constructor.
+
 
 > :memo: You need to add a `deferredInit:true` to the property configuration to allow
 > for a deferred initialization for reference types as mentioned above.
@@ -382,7 +393,7 @@ qx.Class.define("qx.MyClass", {
   properties : {
     myProperty : { deferredInit : true}
   }
-};
+});
 ```
 
 ### Applying an init value
@@ -672,27 +683,27 @@ The transform function is passed a second parameter which is the value
 previously set - note that the first time that transform is called, the oldValue
 parameter will be undefined
 
+
 ## Asynchronous Properties using Promises
 
-Sometimes it may be necessary for an applyXxx method to take some time to
-complete, in which case it is necessary to consider coding asynchronously to
-allow for a better user experience. Perhaps more importantly, if your apply
-method includes triggering a server round trip then changes to the specification
-(  
-<https://xhr.spec.whatwg.org/>) have deprecated synchronous XMLHttpRequest, and
-some browsers (e.g. Safari) already have very short timeouts for synchronous
-XMLHttpRequests which cannot be overridden.
+Sometimes it may be necessary for an `applyXxx` method to take some time to
+complete, in which case it is necessary to consider coding asynchronously to allow
+for a better user experience. Perhaps more importantly, if your apply method
+includes triggering a server round trip then
+[changes to the specification](https://xhr.spec.whatwg.org/) have deprecated
+synchronous XMLHttpRequest, and some browsers (e.g. Safari) already have very
+short timeouts for synchronous XMLHttpRequests which cannot be overridden.
 
-Properties can be made asynchronous by using qx.Promise.
+Properties can be made asynchronous by using `qx.Promise`.
 
 The return value for apply methods is normally ignored, but if it returns an
-instance of qx.Promise the setXxx method will wait for the promise to be
-fulfilled before firing the changeXxx event.
+instance of `qx.Promise` the `setXxx` method will wait for the promise to be
+fulfilled before firing the  `changeXxx` event.
 
-As setXxx method returns the value which has been set, it is not possible to
-return the promise to the caller - to retrieve the promise, you must tell
-Qooxdoo that the property is asynchronous by setting the async: true in the
-property definition and then calling the setXxxAsync method:
+As `setXxx` method returns the value which has been set, it is not possible to
+return the promise to the caller - to retrieve the promise, you must call the
+`setXxxAsync` method; you can also optionally tell Qooxdoo that the property
+is always asynchronous by setting the `async: true` in the property definition:
 
 ```javascript
 properties :
@@ -724,12 +735,29 @@ myObject.setNameAsync("abc").then(function() {
 });
 ```
 
-Note that the setXxxAsync method is _only_ available if you have specified
-async: true in the property definition
+In a change to previous versions of Qooxdoo, the `setXxxAsync` method is _always_ available, regardless
+of whether you have specified `async: true` in the property definition.
 
-As well as setXxxAsync there is also a matching getXxxAsync method and a
-changeXxxAsync event which can be fired; event handlers can return promises, and
-asynchronous properties can be bound using qx.core.Object.bind()
+As well as `setXxxAsync` there is also a matching `getXxxAsync` method and a
+`changeXxxAsync` event which can be fired; event handlers can return promises, and 
+asynchronous properties can be bound using `qx.core.Object.bind()`
+
+### Asynchronous Apply Method and Event Handlers
+You can call `setXxxAsync` for any property, and you can also define `apply` methods and event handlers
+which are `async` functions - this is true, regardless of whether you define the property with `async: true`.
+
+Your class has no control over whether someone adds an event handler which is `async` or just an ordinary, 
+synchronous, function; you do have control over whether your `apply` method is `async`, although in theory
+someone could override in a derived class it with an `async` implementation (although admittedly it would
+be dubious to do so).
+
+It is important that synchronous behaviour is preserved and the functionality of perfectly normal, synchronous
+code, is not changed simply because someone adds an asynchronous event handler - this means that calls
+to `setXxx` will always completely synchronously, and while they may trigger asynchronous event handlers,
+the synchronous `setXxx` will complete before those asynchronous handlers execute.
+
+If you want to wait until all of the asynchronous handlers are complete, you must call `setXxxAsync` - this
+will return a promise that will complete when all of the event handlers have completed.
 
 ## Validation of incoming values
 

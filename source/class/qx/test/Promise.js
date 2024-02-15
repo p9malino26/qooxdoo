@@ -119,7 +119,7 @@ qx.Class.define("qx.test.Promise", {
       });
 
       this.assertTrue(!!Clazz.prototype.setAlpha);
-      this.assertFalse(!!Clazz.prototype.setAlphaAsync);
+      this.assertTrue(!!Clazz.prototype.setAlphaAsync);
       var obj = new Clazz();
       var p = new qx.Promise(function (resolve) {
         resolve(123);
@@ -467,12 +467,10 @@ qx.Class.define("qx.test.Promise", {
 
       function createObj(name) {
         var obj = new Clazz().set({ value: name });
-        obj.addListener("changeAlphaAsync", function (evt) {
+        obj.addListener("changeAlpha", function (evt) {
           var value = evt.getData();
           var p = new qx.Promise(function (resolve) {
-            console.log(
-              name + ": changeAlphaAsync 1 in qx.Promise, value=" + value
-            );
+            console.log(name + ": changeAlpha 1 in qx.Promise, value=" + value);
 
             setTimeout(function () {
               if (str.length) {
@@ -480,21 +478,17 @@ qx.Class.define("qx.test.Promise", {
               }
               str += name;
               console.log(
-                name +
-                  ": changeAlphaAsync 1 resolving qx.Promise, value=" +
-                  value
+                name + ": changeAlpha 1 resolving qx.Promise, value=" + value
               );
 
               resolve();
             }, 200);
           }).then(function () {
             console.log(
-              name + ": changeAlphaAsync 1 resolved qx.Promise, value=" + value
+              name + ": changeAlpha 1 resolved qx.Promise, value=" + value
             );
           });
-          console.log(
-            name + ": changeAlphaAsync 1, value=" + value + ", p=" + p
-          );
+          console.log(name + ": changeAlpha 1, value=" + value + ", p=" + p);
 
           return p;
         });
@@ -505,7 +499,7 @@ qx.Class.define("qx.test.Promise", {
       var objTwo = createObj("two");
 
       var str = "";
-      objOne.addListener("changeAlphaAsync", function (evt) {
+      objOne.addListener("changeAlpha", function (evt) {
         var value = evt.getData();
         console.log("objOne.alphaAsync setting, value=" + value);
         return objTwo.setAlphaAsync("def").then(function () {
@@ -525,19 +519,25 @@ qx.Class.define("qx.test.Promise", {
     },
 
     /**
-     * Tests using bind() on async properties (using the "changeXxxAsync" events) between
+     * Tests using bind() on async properties (using the "changeXxx" events) between
      * a series of objects.  The test must show that the property values are fired in
      * order, and that if an async event handler returns a promise it defers bind from
      * propagating onto other objects.
-     */
+     * 
+     * NOTE:: This currently cannot work reliably because `qx.data.SingleValueBinding`
+     * does not support asynchronous binding, and this code would depend on the event
+     * process holding off firing synchronous subsequent events until after the previous
+     * event has completed, even if that is asynchronous.  That implementation has been 
+     * reverted because it breaks other code (specifically, it breaks the behavour of
+     * events)
+     *
     testWaterfallBinding() {
       var t = this;
       var Clazz = qx.Class.define("testWaterfallBinding.Clazz", {
         extend: qx.core.Object,
         properties: {
           value: {},
-
-          alpha: {
+           alpha: {
             init: null,
             nullable: true,
             async: true,
@@ -545,8 +545,7 @@ qx.Class.define("qx.test.Promise", {
             event: "changeAlpha"
           }
         },
-
-        members: {
+         members: {
           _applyAlpha(value, oldValue) {
             var t = this;
             console.log("pre applyAlpha[" + t.getValue() + "] = " + value);
@@ -559,15 +558,13 @@ qx.Class.define("qx.test.Promise", {
           }
         }
       });
-
-      var objs = [];
+       var objs = [];
       var str = "";
-
-      function trap(i) {
+       function trap(i) {
         var obj = new Clazz().set({ value: i });
         var bindPromise;
         if (i > 0) {
-          bindPromise = objs[i - 1].bindAsync("alphaAsync", obj, "alphaAsync");
+          bindPromise = objs[i - 1].bindAsync("alpha", obj, "alpha");
         } else {
           bindPromise = qx.Promise.resolve(true);
         }
@@ -584,8 +581,7 @@ qx.Class.define("qx.test.Promise", {
                 " after " +
                 delay
             );
-
-            return new qx.Promise(function (resolve) {
+             return new qx.Promise(function (resolve) {
               setTimeout(function () {
                 if (str.length) {
                   str += ",";
@@ -599,28 +595,24 @@ qx.Class.define("qx.test.Promise", {
                     " after " +
                     delay
                 );
-
-                resolve();
+                 resolve();
               }, delay);
             });
           });
-
-          objs[i] = obj;
+           objs[i] = obj;
         });
       }
-
-      qx.Promise.mapSeries([0, 1, 2, 3, 4], trap).then(function () {
+       qx.Promise.mapSeries([0, 1, 2, 3, 4], trap).then(function () {
         var p = objs[0].setAlphaAsync("abc");
-
-        p.then(function () {
+         p.then(function () {
           t.assertEquals("0:abc,1:abc,2:abc,3:abc,4:abc", str);
           qx.Class.undefine("testWaterfallBinding.Clazz");
           t.resume();
         }, t);
       });
-
-      this.wait(10000);
+       this.wait(10000);
     },
+    */
 
     /**
      * Tests the each method of promise, using qx.data.Array which the Bluebird implementation

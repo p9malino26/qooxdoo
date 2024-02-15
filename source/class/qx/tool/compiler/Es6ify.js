@@ -211,7 +211,7 @@ qx.Class.define("qx.tool.compiler.Es6ify", {
           editorConfig: true
         })) || {};
       prettierConfig.parser = "babel";
-      let prettyCode = prettier.format(result.code, prettierConfig);
+      let prettyCode = await prettier.format(result.code, prettierConfig);
 
       let outname = this.__filename + (this.isOverwrite() ? "" : ".es6ify");
       await fs.promises.writeFile(outname, prettyCode, "utf8");

@@ -81,7 +81,9 @@ qx.Class.define("qx.ui.form.SelectBox", {
   */
 
   properties: {
-    /**@override*/
+    /**
+     * @Override
+     */
     appearance: {
       refine: true,
       init: "selectbox"
@@ -114,7 +116,9 @@ qx.Class.define("qx.ui.form.SelectBox", {
       this.getChildControl("atom").setRich(value);
     },
 
-    /**@override*/
+    /**
+     * @Override
+     */
     _defaultFormat(item) {
       if (item) {
         if (typeof item.isRich == "function" && item.isRich()) {
@@ -125,7 +129,9 @@ qx.Class.define("qx.ui.form.SelectBox", {
       return null;
     },
 
-    /**@override*/
+    /**
+     * @Override
+     */
     _createChildControlImpl(id, hash) {
       var control;
 
@@ -169,7 +175,9 @@ qx.Class.define("qx.ui.form.SelectBox", {
       return super._createQxObjectImpl(id);
     },
 
-    /**@override*/
+    /**
+     * @Override
+     */
     /**
      * @lint ignoreReferenceField(_forwardStates)
      */
@@ -321,7 +329,9 @@ qx.Class.define("qx.ui.form.SelectBox", {
       this.toggle();
     },
 
-    /**@override*/
+    /**
+     * @Override
+     */
     _onKeyPress(e) {
       var iden = e.getKeyIdentifier();
       if ((iden == "Down" || iden == "Up") && e.isAltPressed()) {
@@ -356,7 +366,9 @@ qx.Class.define("qx.ui.form.SelectBox", {
       this.getChildControl("list").dispatchEvent(clone);
     },
 
-    /**@override*/
+    /**
+     * @Override
+     */
     _onListPointerDown(e) {
       // Apply pre-selected item (translate quick selection to real selection)
       if (this.__preSelectedItem) {
@@ -365,7 +377,9 @@ qx.Class.define("qx.ui.form.SelectBox", {
       }
     },
 
-    /**@override*/
+    /**
+     * @Override
+     */
     _onListChangeSelection(e) {
       var current = e.getData();
       var old = e.getOldData();
@@ -414,7 +428,9 @@ qx.Class.define("qx.ui.form.SelectBox", {
       }
     },
 
-    /**@override*/
+    /**
+     * @Override
+     */
     _onPopupChangeVisibility(e) {
       super._onPopupChangeVisibility(e);
 

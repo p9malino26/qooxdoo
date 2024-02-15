@@ -493,7 +493,6 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
      * @param domEvent {Event} DOM event
      * @param type {String ? null} type of the event
      * @param target {Element ? null} event target
-     * @return {qx.Promise?} a promise, if one was returned by event handlers
      */
     _fireEvent(domEvent, type, target) {
       target = target || domEvent.target;
@@ -517,33 +516,20 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
           // Nothing - strict mode prevents writing to read only properties
         }
       }
-
       if (qx.core.Environment.get("event.dispatchevent")) {
-        var tracker = {};
         if (!this.__nativePointerEvents) {
-          qx.event.Utils.then(tracker, function () {
-            return target.dispatchEvent(domEvent);
-          });
+          target.dispatchEvent(domEvent);
         }
         if (gestureEvent) {
-          qx.event.Utils.then(tracker, function () {
-            return target.dispatchEvent(gestureEvent);
-          });
+          target.dispatchEvent(gestureEvent);
         }
-        return tracker.promise;
       } else {
-        if (
-          qx.core.Environment.get("browser.name") === "msie" &&
-          qx.core.Environment.get("browser.version") < 9
-        ) {
-          // ensure compatibility with native events for IE8
-          try {
-            domEvent.srcElement = target;
-          } catch (ex) {
-            // Nothing - strict mode prevents writing to read only properties
-          }
+        // ensure compatibility with native events for IE8
+        try {
+          domEvent.srcElement = target;
+        } catch (ex) {
+          // Nothing - strict mode prevents writing to read only properties
         }
-
         while (target) {
           if (target.$$emitter) {
             domEvent.currentTarget = target;

@@ -1691,7 +1691,6 @@ qx.Class.define("qx.html.Element", {
         if (!this.__styleJobs) {
           this.__styleJobs = {};
         }
-
         for (var key in map) {
           var value = map[key];
           if (this.__styleValues[key] == value) {
