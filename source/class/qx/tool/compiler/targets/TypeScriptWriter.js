@@ -247,7 +247,9 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
           true
         );
       }
-      this.writeMembers(meta.statics, meta, true);
+      if (meta.type !== "interface") {
+        this.writeMembers(meta.statics, meta, true);
+      }
       this.writeMembers(meta.members, meta);
       if (meta.properties) {
         this.writeProperties(meta);
@@ -361,14 +363,47 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
         objType += `\n${this.__indent}  ${names[i]}?: ${types[i]};`;
       }
       objType += `\n${this.__indent}}`;
+
+      const override = this.__propertiesInHierarchy(meta);
       this.__writeMethod("set", {
         parameters: [{ name: "data", type: objType }],
         returnType: "this",
         jsdoc: { raw: [`Sets several properties at once`] },
-        override: true
+        override
+      });
+
+      this.__writeMethod("get", {
+        parameters: [{ name: "prop", type: "string" }],
+        returnType: "this",
+        jsdoc: { raw: [`Gets a property by name`] },
+        override
       });
     },
 
+    /**
+     * Determines if any class in the hierarchy defines any properties
+     * @param {qx.tool.compiler.MetaExtraction} meta
+     * @returns {Boolean}
+     */
+    __propertiesInHierarchy(meta) {
+      const firstpass = arguments[1] ?? true;
+      if (!firstpass) {
+        if (Object.keys(meta.properties).length) {
+          return true;
+        }
+        if (meta.mixins) {
+          return meta.mixins.some(mixin => {
+            const mixinMeta = this.__metaDb.getMetaData(mixin);
+            return this.__propertiesInHierarchy(mixinMeta, false);
+          });
+        }
+      }
+      if (meta.superClass) {
+        const superClassMeta = this.__metaDb.getMetaData(meta.superClass);
+        return this.__propertiesInHierarchy(superClassMeta, false);
+      }
+      return false;
+    },
     /**
      * Do the mapping of types from Qooxdoo to TypeScript
      *
@@ -677,7 +712,7 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
       const access = isStatic ? "statics" : "members";
 
       for (var name in body) {
-        let memberMeta = body[name];
+        let memberMeta = Object.getOwnPropertyDescriptor(body, name).value;
         if (memberMeta.appearsIn?.length) {
           const superLikeName = memberMeta.appearsIn.slice(-1)[0];
           const superLikeMeta = this.__metaDb.getMetaData(superLikeName);
