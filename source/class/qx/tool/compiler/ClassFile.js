@@ -3003,11 +3003,11 @@ qx.Class.define("qx.tool.compiler.ClassFile", {
 
           if (!name.startsWith(t.__className)) {
             if (
-              !qx.tool.compiler.ClassFile.DEFER_SAFE_SYMBOLS.some(function (
-                symbol
-              ) {
-                return name.startsWith(symbol);
-              })
+              !qx.tool.compiler.ClassFile.DEFER_SAFE_SYMBOLS.some(
+                function (symbol) {
+                  return name.startsWith(symbol);
+                }
+              )
             ) {
               // Temporarily disabled until Qooxdoo framework catches up
               // t.addMarker("defer.unsafe", (opts && opts.location)||null, name);

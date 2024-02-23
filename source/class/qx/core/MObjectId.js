@@ -61,7 +61,6 @@ qx.Mixin.define("qx.core.MObjectId", {
     handleObjects(clazz, instance, id) {
       const objectsDef = clazz.$$objects;
       const clazzObject = objectsDef?.[id]?.call(instance);
-
       if (clazzObject !== undefined) {
         return clazzObject;
       }
@@ -172,6 +171,11 @@ qx.Mixin.define("qx.core.MObjectId", {
           return obj;
         }
       }
+      if (
+        this.classname == "uk.co.spar.client.qa.ingredients.IngredientsGrid" &&
+        id == "compTitle"
+      )
+        debugger;
 
       // Separate out the child control ID
       var controlId = null;
