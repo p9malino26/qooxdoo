@@ -278,6 +278,10 @@ qx.Class.define("qx.html.Node", {
       };
 
       const scanDomNode = (parentElement, domNode, idx) => {
+        if (domNode.nodeType == window.Node.COMMENT_NODE) {
+          // TODO: Handle comments
+          return;
+        }
         if (domNode.nodeType == window.Node.TEXT_NODE) {
           let newChild = qx.html.Factory.getInstance().createElement("#text");
           newChild._useNodeImpl(domNode);
