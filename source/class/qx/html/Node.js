@@ -278,6 +278,10 @@ qx.Class.define("qx.html.Node", {
       };
 
       const scanDomNode = (parentElement, domNode, idx) => {
+        if (domNode.nodeType == window.Node.COMMENT_NODE) {
+          // TODO: Handle comments
+          return;
+        }
         if (domNode.nodeType == window.Node.TEXT_NODE) {
           let newChild = qx.html.Factory.getInstance().createElement("#text");
           newChild._useNodeImpl(domNode);
@@ -1351,8 +1355,7 @@ qx.Class.define("qx.html.Node", {
       if (this._properties[key].value == value) {
         return this;
       }
-      this._properties[key].value = value;
-      // Uncreated elements simply copy all data
+      this._properties[key].value = value; // Uncreated elements simply copy all data
       // on creation. We don't need to remember any
       // jobs. It is a simple full list copy.
       if (this._domNode) {
