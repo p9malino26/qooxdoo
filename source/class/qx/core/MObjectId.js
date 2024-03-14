@@ -171,11 +171,6 @@ qx.Mixin.define("qx.core.MObjectId", {
           return obj;
         }
       }
-      if (
-        this.classname == "uk.co.spar.client.qa.ingredients.IngredientsGrid" &&
-        id == "compTitle"
-      )
-        debugger;
 
       // Separate out the child control ID
       var controlId = null;
