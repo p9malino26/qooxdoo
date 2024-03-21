@@ -1733,7 +1733,8 @@ qx.Class.define("qx.tool.compiler.ClassFile", {
             TaggedTemplateExpression: 1,
             ClassExpression: 1,
             OptionalCallExpression: 1,
-            JSXExpressionContainer: 1
+            JSXExpressionContainer: 1,
+            JSXSpreadAttribute: 1
           };
 
           let root = path;
@@ -3136,7 +3137,8 @@ qx.Class.define("qx.tool.compiler.ClassFile", {
      */
     JSX_OPTIONS: {
       pragma: "qx.html.Jsx.createElement",
-      pragmaFrag: "qx.html.Jsx.FRAGMENT"
+      pragmaFrag: "qx.html.Jsx.FRAGMENT",
+      throwIfNamespace: false
     },
 
     /**
@@ -3260,6 +3262,7 @@ qx.Class.define("qx.tool.compiler.ClassFile", {
 
     NODE_GLOBALS: [
       "Module",
+      "Buffer",
       "require",
       "module",
       "process",

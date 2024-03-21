@@ -355,8 +355,8 @@ qx.Theme.define("qx.theme.tangible.Appearance", {
           textColor: states.disabled
             ? "text-disabled-on-surface"
             : states.showingPlaceholder
-            ? "text-hint-on-surface"
-            : undefined
+              ? "text-hint-on-surface"
+              : undefined
         };
       }
     },
@@ -388,8 +388,8 @@ qx.Theme.define("qx.theme.tangible.Appearance", {
           textColor: states.disabled
             ? "text-disabled-on-surface"
             : states.showingPlaceholder
-            ? "text-hint-on-surface"
-            : undefined
+              ? "text-hint-on-surface"
+              : undefined
         };
       }
     },
@@ -579,19 +579,13 @@ qx.Theme.define("qx.theme.tangible.Appearance", {
         };
       }
     },
-
     "table-scroller/resize-line": {
       style(states) {
-        return {
-          backgroundColor: "text-hint-on-surface",
-          width: 3
-        };
+        return { backgroundColor: "text-hint-on-surface", width: 3 };
       }
     },
-
     "table-header-cell": {
       alias: "atom",
-
       style(states) {
         return {
           decorator: states.first
@@ -610,10 +604,8 @@ qx.Theme.define("qx.theme.tangible.Appearance", {
         };
       }
     },
-
     "table-header-cell/icon": {
       include: "atom/icon",
-
       style(states) {
         return { paddingRight: 5 };
       }
@@ -1014,8 +1006,8 @@ qx.Theme.define("qx.theme.tangible.Appearance", {
           textColor: states.disabled
             ? "text-disabled-on-surface"
             : states.pressed || states.hovered
-            ? "text-on-primary"
-            : "text-on-surface"
+              ? "text-on-primary"
+              : "text-on-surface"
         };
       }
     },
@@ -1209,10 +1201,10 @@ qx.Theme.define("qx.theme.tangible.Appearance", {
           textColor: states.disabled
             ? "text-disabled-on-surface"
             : states.invalid
-            ? "error"
-            : states.checked
-            ? "primary"
-            : "text-primary-on-surface",
+              ? "error"
+              : states.checked
+                ? "primary"
+                : "text-primary-on-surface",
           gap: 6
         };
       }
@@ -1253,17 +1245,17 @@ qx.Theme.define("qx.theme.tangible.Appearance", {
             states.checked
               ? "checkbox-checked"
               : states.undetermined
-              ? "checkbox-undetermined"
-              : "checkbox-blank"
+                ? "checkbox-undetermined"
+                : "checkbox-blank"
           ],
 
           textColor: states.disabled
             ? "text-disabled-on-surface"
             : states.invalid
-            ? "error"
-            : states.checked
-            ? "primary"
-            : "text-primary-on-surface",
+              ? "error"
+              : states.checked
+                ? "primary"
+                : "text-primary-on-surface",
           gap: 6
         };
       }
@@ -1490,6 +1482,7 @@ qx.Theme.define("qx.theme.tangible.Appearance", {
       alias: "atom",
 
       style(states) {
+        let useSelectionState = !states.readonly && states.selected;
         var padding = [3, 5, 3, 5];
         if (states.lead) {
           padding = [2, 4, 2, 4];
@@ -1501,19 +1494,19 @@ qx.Theme.define("qx.theme.tangible.Appearance", {
         return {
           gap: 4,
           padding: padding,
-          backgroundColor: states.selected
+          backgroundColor: useSelectionState
             ? states.disabled
               ? "primary-disabled"
               : "primary"
             : "transparent",
-          textColor: states.selected
+          textColor: useSelectionState
             ? "text-on-primary"
             : "text-primary-on-surface",
           decorator: states.lead
             ? "lead-item"
             : states.dragover
-            ? "dragover"
-            : undefined,
+              ? "dragover"
+              : undefined,
           opacity: states.drag ? 0.5 : undefined
         };
       }
@@ -1715,8 +1708,8 @@ qx.Theme.define("qx.theme.tangible.Appearance", {
           decorator: states.maximized
             ? undefined
             : states.active
-            ? "window-active"
-            : "window"
+              ? "window-active"
+              : "window"
         };
       }
     },
@@ -1846,8 +1839,8 @@ qx.Theme.define("qx.theme.tangible.Appearance", {
           textColor: states.disabled
             ? "text-disabled-on-surface"
             : states.invalid
-            ? "error"
-            : undefined,
+              ? "error"
+              : undefined,
           padding: [2, 10]
         };
       }
@@ -1927,10 +1920,10 @@ qx.Theme.define("qx.theme.tangible.Appearance", {
           textColor: states.disabled
             ? "text-disabled-on-surface"
             : states.selected
-            ? "text-on-primary"
-            : states.otherMonth
-            ? "text-disabled-on-surface"
-            : undefined,
+              ? "text-on-primary"
+              : states.otherMonth
+                ? "text-disabled-on-surface"
+                : undefined,
           backgroundColor: states.selected
             ? states.disabled
               ? "primary-disabled"

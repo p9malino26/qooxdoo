@@ -184,10 +184,10 @@ qx.Theme.define("qx.theme.classic.Appearance", {
           backgroundColor: states.abandoned
             ? "button-abandoned"
             : states.hovered
-            ? "button-hovered"
-            : states.checked
-            ? "button-checked"
-            : "button",
+              ? "button-hovered"
+              : states.checked
+                ? "button-checked"
+                : "button",
           decorator: decorator,
           padding: padding
         };
@@ -300,11 +300,14 @@ qx.Theme.define("qx.theme.classic.Appearance", {
       alias: "atom",
 
       style(states) {
+        let useSelectionState = !states.readonly && states.selected;
         return {
           gap: 4,
           padding: states.lead ? [2, 4] : [3, 5],
-          backgroundColor: states.selected ? "background-selected" : undefined,
-          textColor: states.selected ? "text-selected" : undefined,
+          backgroundColor: useSelectionState
+            ? "background-selected"
+            : undefined,
+          textColor: useSelectionState ? "text-selected" : undefined,
           decorator: states.lead ? "lead-item" : undefined,
           opacity: states.drag ? 0.5 : undefined
         };
@@ -674,8 +677,8 @@ qx.Theme.define("qx.theme.classic.Appearance", {
           backgroundColor: states.abandoned
             ? "button-abandoned"
             : states.checked
-            ? "background-light"
-            : "button"
+              ? "background-light"
+              : "button"
         };
       }
     },
@@ -1485,8 +1488,8 @@ qx.Theme.define("qx.theme.classic.Appearance", {
           textColor: states.disabled
             ? "text-disabled"
             : states.invalid
-            ? "invalid"
-            : undefined,
+              ? "invalid"
+              : undefined,
           padding: [2, 10]
         };
       }
@@ -1567,8 +1570,8 @@ qx.Theme.define("qx.theme.classic.Appearance", {
           textColor: states.disabled
             ? "text-disabled"
             : states.weekend
-            ? "date-chooser-title"
-            : "date-chooser",
+              ? "date-chooser-title"
+              : "date-chooser",
           backgroundColor: states.weekend
             ? "date-chooser"
             : "date-chooser-title"
@@ -1584,15 +1587,15 @@ qx.Theme.define("qx.theme.classic.Appearance", {
           textColor: states.disabled
             ? "text-disabled"
             : states.selected
-            ? "text-selected"
-            : states.otherMonth
-            ? "text-disabled"
-            : undefined,
+              ? "text-selected"
+              : states.otherMonth
+                ? "text-disabled"
+                : undefined,
           backgroundColor: states.disabled
             ? undefined
             : states.selected
-            ? "date-chooser-selected"
-            : undefined,
+              ? "date-chooser-selected"
+              : undefined,
           padding: [2, 4]
         };
       }
@@ -1817,8 +1820,8 @@ qx.Theme.define("qx.theme.classic.Appearance", {
           icon: !states.checked
             ? undefined
             : states.selected
-            ? "decoration/menu/checkbox-invert.gif"
-            : "decoration/menu/checkbox.gif"
+              ? "decoration/menu/checkbox-invert.gif"
+              : "decoration/menu/checkbox.gif"
         };
       }
     },
@@ -1832,8 +1835,8 @@ qx.Theme.define("qx.theme.classic.Appearance", {
           icon: !states.checked
             ? undefined
             : states.selected
-            ? "decoration/menu/radiobutton-invert.gif"
-            : "decoration/menu/radiobutton.gif"
+              ? "decoration/menu/radiobutton-invert.gif"
+              : "decoration/menu/radiobutton.gif"
         };
       }
     },
