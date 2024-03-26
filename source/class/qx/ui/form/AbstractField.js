@@ -99,11 +99,12 @@ qx.Class.define("qx.ui.form.AbstractField", {
           "-ms-input-placeholder, textarea.qx-placeholder-color",
           "-ms-input-placeholder"
         ].join(separator);
-        qx.ui.style.Stylesheet.getInstance().addRule(
-          selector,
-          "color: " + color + " !important"
-        );
       }
+
+      qx.ui.style.Stylesheet.getInstance().addRule(
+        selector,
+        "color: " + color + " !important"
+      );
     }
   },
 
@@ -382,21 +383,13 @@ qx.Class.define("qx.ui.form.AbstractField", {
      */
     _renderContentElement(innerHeight, element) {
       //use it in child classes
-    },
-
-    // overridden
+    }, // overridden
     _createContentElement() {
       // create and add the input element
-      var el = this._createInputElement();
-
-      // initialize the html input
+      var el = this._createInputElement(); // initialize the html input
       el.setSelectable(this.getSelectable());
-      el.setEnabled(this.getEnabled());
-
-      // Add listener for input event
-      el.addListener("input", this._onHtmlInput, this);
-
-      // Disable HTML5 spell checking
+      el.setEnabled(this.getEnabled()); // Add listener for input event
+      el.addListener("input", this._onHtmlInput, this); // Disable HTML5 spell checking
       el.setAttribute("spellcheck", "false");
       el.addClass("qx-abstract-field");
 
