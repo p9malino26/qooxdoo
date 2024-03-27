@@ -90,9 +90,11 @@ qx.Class.define("qx.tool.utils.Utils", {
      */
     formatTime(millisec) {
       var seconds = Math.floor(millisec / 1000);
-      var minutes = Math.floor(seconds / 60);
-      var hours = Math.floor(minutes / 60);
       millisec %= 1000;
+      var minutes = Math.floor(seconds / 60);
+      seconds %= 60;
+      var hours = Math.floor(minutes / 60);
+      minutes %= 60;
 
       var result = "";
       if (hours) {
@@ -497,7 +499,6 @@ qx.Class.define("qx.tool.utils.Utils", {
       let dir = qx.util.ResourceManager.getInstance().toUri(
         "qx/tool/cli/templates/template_vars.js"
       );
-
       dir = path.dirname(dir);
       return dir;
     },

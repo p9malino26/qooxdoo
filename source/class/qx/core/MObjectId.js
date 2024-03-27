@@ -61,6 +61,7 @@ qx.Mixin.define("qx.core.MObjectId", {
     handleObjects(clazz, instance, id) {
       const objectsDef = clazz.$$objects;
       const clazzObject = objectsDef?.[id]?.call(instance);
+
       if (clazzObject !== undefined) {
         return clazzObject;
       }
@@ -94,18 +95,6 @@ qx.Mixin.define("qx.core.MObjectId", {
           "Please use API methods to change owner, not the property"
         );
       }
-      if (qx.core.Environment.get("qx.debug")) {
-        if (oldValue && typeof oldValue.getContentElement == "function") {
-          oldValue
-            .getContentElement()
-            .setAttribute("data-qooxdoo-owner-classname", null);
-        }
-        if (value && typeof value.getContentElement == "function") {
-          value
-            .getContentElement()
-            .setAttribute("data-qooxdoo-owner-classname", value.classname);
-        }
-      }
     },
 
     /**
@@ -118,14 +107,6 @@ qx.Mixin.define("qx.core.MObjectId", {
           owner.__onOwnedObjectIdChange(this, value, oldValue);
         }
         this._cascadeQxObjectIdChanges();
-        if (qx.core.Environment.get("qx.debug")) {
-          if (typeof this.getContentElement == "function") {
-            this.getContentElement().setAttribute(
-              "data-qooxdoo-object-id",
-              value
-            );
-          }
-        }
       }
     },
 
@@ -171,11 +152,6 @@ qx.Mixin.define("qx.core.MObjectId", {
           return obj;
         }
       }
-      if (
-        this.classname == "uk.co.spar.client.qa.ingredients.IngredientsGrid" &&
-        id == "compTitle"
-      )
-        debugger;
 
       // Separate out the child control ID
       var controlId = null;
