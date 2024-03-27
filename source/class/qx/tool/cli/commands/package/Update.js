@@ -100,7 +100,7 @@ qx.Class.define("qx.tool.cli.commands.package.Update", {
       }
 
       let cfg = await qx.tool.cli.ConfigDb.getInstance();
-      let github = cfg.setting("github", {});
+      let github = cfg.db("github", {});
 
       // Create the cache
       if (!this.argv.search) {
@@ -161,7 +161,8 @@ qx.Class.define("qx.tool.cli.commands.package.Update", {
       }
       let url = this.getRepositoryCacheUrl();
       try {
-        let res = await qx.tool.utils.Http.httpGet(url);
+        let fetch = await import("node-fetch");
+        let res = await fetch(url);
         let data = await res.json();
         this.setCache(data);
       } catch (e) {
