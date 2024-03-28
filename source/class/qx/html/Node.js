@@ -31,7 +31,9 @@
  *
  * NOTE: Instances of this class must be disposed of after use
  *
- * @require(qx.module.Animation)
+ * NOTE:: This classes used to require `qx.module.Animation` but this brings in a huge
+ * list of dependencies, so it has been moved to the `qx.application.AbstractGui` class
+ *
  */
 qx.Class.define("qx.html.Node", {
   extend: qx.core.Object,
