@@ -166,8 +166,8 @@ A complete example is:
 The `targets` key is an array of objects, one for each possible target that can
 be compiled. Each object can contain:
 
-- `type` - this is either "source", "build", or a class name; using a class name
-  is advanced usage, but ultimately the standard names just shortcuts to class
+- `type` - this is either "source", "build", or a class name; using a class name 
+  is advanced usage, but ultimately the standard names just shortcuts to class 
   names anyway ("source" is `qx.tool.compiler.targets.SourceTarget`, etc.).
 
 - `outputPath` the folder where the compilation outputs to, and will be created
@@ -195,9 +195,10 @@ be compiled. Each object can contain:
 - `minify` - (**optional**) determines the minification to be used for
   applications, if the target supports it; can be overridden on a per-
   application basis. Can be `off`, `minify`, `mangle`, or `beautify`.
+  
 - `inline-external-scripts` -- (**optional**) controls whether external scripts are added
   inline into the `index.js` of the target application, or whether they are loaded
-  by adding separate `<script>` tags into the document, This is by default `false` for source
+  by adding separate `<script>` tags into the document,  This is by default `false` for source
   targets and true for `build` targets; see also the `--inline-external-scripts` command
   line option.
 
@@ -248,7 +249,7 @@ and the value of which is either `true` (to enable), or `false` (to not add the
 plugin), or an object configuring the plugin.
 
 There is risk in adding support for additional, non-standard babel plugins - EG
-the @babel/plugin-proposal-\* plug ins which add early proposed additions to
+the @babel/plugin-proposal-* plug ins which add early proposed additions to
 javascript.
 
 Not surprisingly this comes with caveats, first of which is that changes to the
@@ -269,15 +270,15 @@ should be useful.
   situations where you want to have multiple targets simultaneously (see below)
 
 - `proxySourcePath` - (**optional**) when compiling source code, the compiler
-  normally looks in the library, in the directory specified by that library's
-  `Manifest.json` in `provides/class` (e.g. usually this is `./source/class`). The
-  `proxySourcePath` setting in a target allows a global override, specific to that
-  target, which says that source files can be found somewhere else, in preference
-  to the files which are found in the library. While this allows a target to completely
-  and arbitrarily replace class source files, the intention is that this is for
-  computer-generated class files which act as some kind of proxy for the original
-  functionality - a good example of a use case for this would be a class which, when
-  compiled for the browser, is mostly proxy method calls (or whatever) to the server.
+normally looks in the library, in the directory specified by that library's
+`Manifest.json` in `provides/class` (e.g. usually this is `./source/class`).  The
+`proxySourcePath` setting in a target allows a global override, specific to that
+target, which says that source files can be found somewhere else, in preference
+to the files which are found in the library.  While this allows a target to completely
+and arbitrarily replace class source files, the intention is that this is for 
+computer-generated class files which act as some kind of proxy for the original 
+functionality - a good example of a use case for this would be a class which, when
+compiled for the browser, is mostly proxy method calls (or whatever) to the server.
 
 - `addTimestampsToUrls` - (**optional**) if set to true, then all the URLs which are
   output will have the timestamp of the file appended as a query parameter; this allows
@@ -286,25 +287,8 @@ should be useful.
   for build targets and `false` for source targets. Note that this option is entirely
   dependent on the application's index.html containing a template reference to the
   `indexJsTimestamp` variable in the `<script>` tag that loads the `index.js` file:
-
+  
   `<script type="text/javascript" src="${appPath}index.js${indexJsTimestamp}"></script>`
-
-- `fonts` - (**optional**) if provided, this controls how to handle web fonts; it is an
-  object that looks like:
-
-```json
-"fonts": {
-  "local": true,
-  "fontTypes": [ "woff", "ttf" ]
-}
-```
-
-The `local` property is a boolean which says whether to prefer local fonts to fonts on
-a CDN and loaded via CSS - this defaults to false and can be overridden with the `qx compile --prefer-local-fonts`
-command line option
-
-The `fontTypes` array lists font filename extensions that are to be used, by default this is
-"woff" but common extensions include "woff", "woff2', "ttf", "eot"
 
 ### Multiple Applications and Targets
 
@@ -448,12 +432,12 @@ an `environment` key, for example:
 
 ```json5
 {
-  /* ... snip ... */
-  defaultTarget: "source",
-  environment: {
-    "qx.icontheme": "Oxygen",
-    "demoapp.myCustomSetting": 42
-  }
+    /* ... snip ... */
+    "defaultTarget": "source",
+    "environment": {
+        "qx.icontheme": "Oxygen",
+        "demoapp.myCustomSetting": 42
+    }
 }
 ```
 
@@ -466,38 +450,38 @@ example:
 
 ```json5
 {
-  applications: [
-    {
-      class: "demoapp.FirstApplication",
-      theme: "demoapp.theme.Theme",
-      name: "appone",
-      environment: {
-        "demoapp.myCustomSetting": 3
-      }
-    },
-    {
-      class: "demoapp.SecondApplication",
-      theme: "demoapp.theme.Theme",
-      name: "apptwo"
+    "applications": [
+        {
+            "class": "demoapp.FirstApplication",
+            "theme": "demoapp.theme.Theme",
+            "name": "appone",
+            "environment": {
+                "demoapp.myCustomSetting": 3
+            }
+        },
+        {
+            "class": "demoapp.SecondApplication",
+            "theme": "demoapp.theme.Theme",
+            "name": "apptwo"
+        }
+    ],
+    "targets": [
+        {
+            "type": "source",
+            "outputPath": "compiled/source",
+            "environment": {
+                "demoapp.myCustomSetting": 2
+            }
+        },
+        {
+            "type": "build",
+            "outputPath": "build-output"
+        }
+    ],
+    "environment": {
+        "qx.icontheme": "Oxygen",
+        "demoapp.myCustomSetting": 1
     }
-  ],
-  targets: [
-    {
-      type: "source",
-      outputPath: "compiled/source",
-      environment: {
-        "demoapp.myCustomSetting": 2
-      }
-    },
-    {
-      type: "build",
-      outputPath: "build-output"
-    }
-  ],
-  environment: {
-    "qx.icontheme": "Oxygen",
-    "demoapp.myCustomSetting": 1
-  }
 }
 ```
 
@@ -513,9 +497,9 @@ code which can never be called; for example, the most common example of this is
 `qx.debug` which is true for the Source Target and false for Build Targets.
 
 However, the environment variable is compiled into every file, which means that
-if you set an environment variable which differs between applications (within the
-same target), then the compiler cannot eliminate code and the check will take place
-at runtime, instead of at compile time. The compiler automatically determines which
+if you set an environment variable which differs between applications (within the 
+same target), then the compiler cannot eliminate code and the check will take place 
+at runtime, instead of at compile time.  The compiler automatically determines which 
 settings can be compiled into the code.
 
 The only exception to this is if you use the `preserveEnvironment` setting when
@@ -593,33 +577,50 @@ is the URI.
 It is up to you to implement the mapping inside your web server so that the
 "/some/virtual/uri/path/qooxdoo" URI is able to load the files from `../qooxdoo`
 
-## TypeScript and Meta Data
+### Keeping all files within the application directory
 
-To output Typescript definitions, use the `qx compile --typescript` command; this
-will generate meta data for every class in every library, and then use the meta
-data to create a `qxoodoo.d.ts` file.
-
-Meta Data and Typescript are closely linked - you can generate the meta data on its 
-own by just running `qx compile --meta`.  Meta data is used by applications such as
-the API Viewer
-
-You can control the directory that meta data is output to and the name of the qooxdoo.d.ts 
-file by using the `meta` and `typescript` properties in `compile.json`; these are the
-defaults:
+When the compiler generates an application(s), it creates `transpiled` and `resource`
+directories at the same level as the application name, and adds various working
+files, eg:
 
 ```
-  "meta": "compiled/meta",
-  "typescript": "compiled/qooxdoo.d.ts",
+compiled/
+  source/
+    myAppName/
+    transpiled/
+    resource/
+    db.json
+    resource-db.json
 ```
 
-A file called `global.d.ts` is also created and placed under your application's
-`source` directory. This file may be useful for tooling and text editors when
-discovering types. Depending on your text editor, it may be beneficial to keep
-the `global.d.ts` file open, or to create a `jsconfig.json` or `tsconfig.json`
-file in your project root.
+This requires that you expose the `compiled/source` directory on your webserver, but 
+you can also make the `transpiled` and `resource` directories *appear* to be inside the
+application directory by setting `privateArtifacts: true` in the top level of `compile.json`
 
-** Note that this has changed: you no longer add a new target, nor do you need to add 
-`typescript: true` to one of your existing targets. **
+You will have to configure your web server to serve `transpiled` and `resource` as virtual
+folders from within the URL that you use for `myAppName`.
+
+## TypeScript
+
+** Note that this has changed: you no longer add a new target ** TypeScript can
+be output by either using the `--typescript` option to `qx compile`, or by
+modifying your target(s) to add `typescript: true` ; if you use a string instead
+of `true`, the string is the name of the file which is generated inside the
+target output directory, for example:
+
+```json5
+    /** Targets */
+    "targets": [
+        {
+            "type": "source",
+            "outputPath": "compiled/source",
+            typescript: true
+        }
+        /* ... snip ... */
+    ]
+```
+
+The TypeScript definition is output into `./compiled/source/qooxdoo.d.ts`.
 
 ## Eslint
 
@@ -656,6 +657,7 @@ If you omit the eslintConfig section a default will be used:
 ** The namespaces of all libraries will be added to the globals section
 automatically! **
 
+
 ## Web Server
 
 If you choose to use the optional web server by running `qx serve`, you can
@@ -668,6 +670,7 @@ change the default port by specifying the `listenPort` property:
   }
 }
 ```
+
 
 ## Running applications
 
@@ -693,14 +696,18 @@ In this example, the application with the "my-server-app" is run, with a command
 line similar to:
 `node compiled/source/my-server-app/my-server-app.js my command line arguments`
 
+
 ## Ignoring global symbols
 
 The compiler tries to detect symbols which have not been declared and will warn you
 if the symbol is not known to it; you can use the `@ignore` JSDoc tag in individual
-javascript files, or you can add a global list with the `"ignores"` key. For example:
+javascript files, or you can add a global list with the `"ignores"` key.  For example:
+
 
 ```json5
 {
-  ignores: ["myGlobalVariable", "myOtherGlobal"]
+  ignores: [ "myGlobalVariable", "myOtherGlobal" ]
 }
 ```
+
+
