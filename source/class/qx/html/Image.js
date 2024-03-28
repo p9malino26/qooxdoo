@@ -27,11 +27,9 @@ qx.Class.define("qx.html.Image", {
    * Creates a new Image
    *
    * @see constructor for {Element}
-   * @param {boolean} forceImgTag Whether to force the use of an img tag
    */
-  construct(tagName, styles, attributes, forceImgTag = false) {
+  construct(tagName, styles, attributes) {
     super(tagName, styles, attributes);
-    this.__forceImgTag = forceImgTag;
     this.registerProperty(
       "source",
       null,
@@ -53,7 +51,6 @@ qx.Class.define("qx.html.Image", {
   members: {
     __paddingTop: null,
     __paddingLeft: null,
-    __forceImgTag: false,
 
     // this member variable is only used for IE browsers to be able
     // to the tag name which will be set. This is heavily connected to the runtime
@@ -153,7 +150,7 @@ qx.Class.define("qx.html.Image", {
             qx.bom.element.Decoration.getTagName(repeat, source)
           );
         }
-      } else if (!this.__forceImgTag) {
+      } else {
         this.setNodeName(qx.bom.element.Decoration.getTagName(repeat));
       }
 
