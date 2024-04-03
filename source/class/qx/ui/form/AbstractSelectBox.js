@@ -206,13 +206,13 @@ qx.Class.define("qx.ui.form.AbstractSelectBox", {
      */ getChildrenContainer() {
       return this.getChildControl("list");
     },
-    
+
     /*
     ---------------------------------------------------------------------------
     LIST STUFF
     ---------------------------------------------------------------------------
     */
-    
+
     /**
      * Shows the list popup.
      */

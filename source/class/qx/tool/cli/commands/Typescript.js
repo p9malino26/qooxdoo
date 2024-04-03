@@ -102,9 +102,8 @@ qx.Class.define("qx.tool.cli.commands.Typescript", {
       let files = this.argv.files || [];
       if (files.length === 0) {
         if (fs.existsSync("Manifest.json")) {
-          let manifest = await qx.tool.utils.Json.loadJsonAsync(
-            "Manifest.json"
-          );
+          let manifest =
+            await qx.tool.utils.Json.loadJsonAsync("Manifest.json");
 
           let tmp = manifest?.provides?.class;
           if (tmp) {
