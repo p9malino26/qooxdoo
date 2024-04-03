@@ -22,7 +22,7 @@ qx.Class.define("qx.tool.compiler.MetaExtraction", {
 
   statics: {
     /** Meta Data Version - stored in meta data files */
-    VERSION: 0.2
+    VERSION: 0.3
   },
 
   members: {
@@ -88,9 +88,8 @@ qx.Class.define("qx.tool.compiler.MetaExtraction", {
      * @return {Object}
      */
     async parse(classFilename) {
-      classFilename = await qx.tool.utils.files.Utils.correctCase(
-        classFilename
-      );
+      classFilename =
+        await qx.tool.utils.files.Utils.correctCase(classFilename);
 
       let stat = await fs.promises.stat(classFilename);
       this.__metaData = {
@@ -233,6 +232,7 @@ qx.Class.define("qx.tool.compiler.MetaExtraction", {
       };
 
       path.skip();
+      let ctorAnnotations = {};
       path.get("properties").forEach(path => {
         let property = path.node;
         let propertyName;
@@ -247,30 +247,79 @@ qx.Class.define("qx.tool.compiler.MetaExtraction", {
           metaData.superClass =
             qx.tool.utils.BabelHelpers.collapseMemberExpression(property.value);
         }
+
+        // Class Annotations
+        else if (propertyName == "@") {
+          metaData.annotation = path.get("value").toString();
+        }
+
         // Core
         else if (propertyName == "implement" || propertyName == "include") {
           let name = propertyName == "include" ? "mixins" : "interfaces";
           metaData[name] = [];
+          // eg: `include: [qx.my.first.MMixin, qx.my.next.MMixin, ..., qx.my.last.MMixin]`
           if (property.value.type == "ArrayExpression") {
             property.value.elements.forEach(element => {
               metaData[name].push(
                 qx.tool.utils.BabelHelpers.collapseMemberExpression(element)
               );
             });
-          } else if (property.value.type == "MemberExpression") {
+          }
+          // eg: `include: qx.my.MMixin`
+          else if (property.value.type == "MemberExpression") {
             metaData[name].push(
               qx.tool.utils.BabelHelpers.collapseMemberExpression(
                 property.value
               )
             );
           }
+          // eg, `include: qx.core.Environment.filter({...})`
+          else if (property.value.type === "CallExpression") {
+            let calleeLiteral = "";
+            let current = property.value.callee;
+            while (current) {
+              let suffix = calleeLiteral ? `.${calleeLiteral}` : "";
+              if (current.type === "MemberExpression") {
+                calleeLiteral = current.property.name + suffix;
+                current = current.object;
+                continue;
+              } else if (current.type === "Identifier") {
+                calleeLiteral = current.name + suffix;
+                break;
+              }
+              throw new Error(
+                `${metaData.className}: error parsing mixin types: cannot resolve ${property.value.callee.type} in CallExpression`
+              );
+            }
+            if (calleeLiteral === "qx.core.Environment.filter") {
+              const properties = property.value.arguments[0]?.properties;
+              properties?.forEach(prop =>
+                metaData[name].push(
+                  qx.tool.utils.BabelHelpers.collapseMemberExpression(
+                    prop.value
+                  )
+                )
+              );
+            } else {
+              this.warn(
+                `${metaData.className}: could not determine mixin types from call \`${calleeLiteral}\`. Type support for this class may be limited.`
+              );
+            }
+          }
         }
+
         // Type
         else if (propertyName == "type") {
           metaData.isSingleton = property.value.value == "singleton";
           metaData.abstract = property.value.value == "abstract";
         }
-        // Methods
+
+        // Constructor & Destructor Annotations
+        else if (propertyName == "@construct" || propertyName == "@destruct") {
+          ctorAnnotations[propertyName] = path.get("value").toString();
+        }
+
+        // Constructor & Destructor Methods
         else if (propertyName == "construct" || propertyName == "destruct") {
           let memberMeta = (metaData[propertyName] = {
             type: "function",
@@ -283,6 +332,7 @@ qx.Class.define("qx.tool.compiler.MetaExtraction", {
 
           collapseParamMeta(property, memberMeta);
         }
+
         // Events
         else if (propertyName == "events") {
           metaData.events = {};
@@ -302,18 +352,26 @@ qx.Class.define("qx.tool.compiler.MetaExtraction", {
             }
           });
         }
+
         // Properties
         else if (propertyName == "properties") {
           this.__scanProperties(path.get("value.properties"));
         }
+
         // Members & Statics
         else if (propertyName == "members" || propertyName == "statics") {
           let type = propertyName;
+          let annotations = {};
           metaData[type] = {};
-          property.value.properties.forEach(member => {
+          path.get("value.properties").forEach(memberPath => {
+            let member = memberPath.node;
             const name = qx.tool.utils.BabelHelpers.collapseMemberExpression(
               member.key
             );
+            if (name[0] == "@") {
+              annotations[name] = memberPath.get("value").toString();
+              return;
+            }
 
             let memberMeta = (metaData[type][name] = {
               jsdoc: qx.tool.utils.BabelHelpers.getJsDoc(member.leadingComments)
@@ -322,8 +380,8 @@ qx.Class.define("qx.tool.compiler.MetaExtraction", {
             memberMeta.access = name.startsWith("__")
               ? "private"
               : name.startsWith("_")
-              ? "protected"
-              : "public";
+                ? "protected"
+                : "public";
             memberMeta.location = {
               start: member.loc.start,
               end: member.loc.end
@@ -339,8 +397,21 @@ qx.Class.define("qx.tool.compiler.MetaExtraction", {
               collapseParamMeta(member, memberMeta);
             }
           });
+          for (let metaName in annotations) {
+            let bareName = metaName.substring(1);
+            let memberMeta = metaData[type][bareName];
+            if (memberMeta) {
+              memberMeta.annotation = annotations[metaName];
+            }
+          }
         }
       });
+      if (ctorAnnotations["@construct"] && metaData.construct) {
+        metaData.construct.annotation = ctorAnnotations["@construct"];
+      }
+      if (ctorAnnotations["@destruct"] && metaData.destruct) {
+        metaData.destruct.annotation = ctorAnnotations["@destruct"];
+      }
     },
 
     /**
@@ -411,9 +482,6 @@ qx.Class.define("qx.tool.compiler.MetaExtraction", {
             if (returnDoc.defaultValue !== undefined) {
               obj.returnType.defaultValue = returnDoc.defaultValue;
             }
-          }
-          if (obj.jsdoc["@throws"]?.length) {
-            obj.returnType = obj.jsdoc["@throws"][0]?.type;
           }
         }
       };

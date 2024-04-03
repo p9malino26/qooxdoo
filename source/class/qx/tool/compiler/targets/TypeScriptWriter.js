@@ -358,22 +358,43 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
         return;
       }
 
-      let objType = `{\n${this.__indent}  [key: string]: any;`;
+      const override = this.__propertiesInHierarchy(meta);
+      const superIsQxClass = !!this.__metaDb.getMetaData(meta.superClass);
+
+      let objType = `{`;
       for (let i = 0; i < Math.min(names.length, types.length); i++) {
         objType += `\n${this.__indent}  ${names[i]}?: ${types[i]};`;
       }
       objType += `\n${this.__indent}}`;
-
-      const override = this.__propertiesInHierarchy(meta);
       this.__writeMethod("set", {
-        parameters: [{ name: "data", type: objType }],
+        parameters: [
+          {
+            name: "data",
+            type:
+              objType +
+              (superIsQxClass
+                ? ` & Parameters<globalThis.${meta.superClass}["set"]>[0]`
+                : "")
+          }
+        ],
+
         returnType: "this",
         jsdoc: { raw: [`Sets several properties at once`] },
         override
       });
 
       this.__writeMethod("get", {
-        parameters: [{ name: "prop", type: "string" }],
+        parameters: [
+          {
+            name: "prop",
+            type:
+              names.map(name => `"${name}"`).join(" | ") +
+              (superIsQxClass
+                ? ` | Parameters<globalThis.${meta.superClass}["get"]>[0]`
+                : "")
+          }
+        ],
+
         returnType: "this",
         jsdoc: { raw: [`Gets a property by name`] },
         override
@@ -388,17 +409,17 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
     __propertiesInHierarchy(meta) {
       const firstpass = arguments[1] ?? true;
       if (!firstpass) {
-        if (Object.keys(meta.properties).length) {
+        if (Object.keys(meta?.properties ?? {}).length) {
           return true;
         }
-        if (meta.mixins) {
+        if (meta?.mixins) {
           return meta.mixins.some(mixin => {
             const mixinMeta = this.__metaDb.getMetaData(mixin);
             return this.__propertiesInHierarchy(mixinMeta, false);
           });
         }
       }
-      if (meta.superClass) {
+      if (meta?.superClass) {
         const superClassMeta = this.__metaDb.getMetaData(meta.superClass);
         return this.__propertiesInHierarchy(superClassMeta, false);
       }
@@ -713,6 +734,15 @@ qx.Class.define("qx.tool.compiler.targets.TypeScriptWriter", {
 
       for (var name in body) {
         let memberMeta = Object.getOwnPropertyDescriptor(body, name).value;
+
+        // this prevents destruction of type information by base classes which include the `qx.core.MProperty` mixin
+        if (
+          (name === "get" || name === "set") &&
+          classMeta.mixins?.includes("qx.core.MProperty")
+        ) {
+          continue;
+        }
+
         if (memberMeta.appearsIn?.length) {
           const superLikeName = memberMeta.appearsIn.slice(-1)[0];
           const superLikeMeta = this.__metaDb.getMetaData(superLikeName);
