@@ -50,12 +50,19 @@
       }
     },
     "meta": {
-      "type": "string",
-      "description": "The output directory for meta data files for each class"
-    },
-    "typescript": {
-      "type": "string",
-      "description": "The output .d.ts file containing Typescript definitions for all known classes"
+      "type": "object",
+      "description": "Meta data for the compiler",
+      "properties": {
+        "output": {
+          "type": "string",
+          "description": "The output directory for meta data files for each class"
+        },
+        "typescript": {
+          "type": ["boolean", "string"],
+          "description": "True/false to enable the output .d.ts file containing Typescript definitions for all known classes; if a string, then it is the filename to output to",
+          "default": false
+        }
+      }
     },
     "applications": {
       "type": "array",
@@ -378,6 +385,10 @@
         }
       },
       "examples": [{ "../qooxdoo": "/some/virtual/uri/path/qooxdoo" }]
+    },
+    "private-artifacts": {
+      "description": "Whether the generated artifacts (ie resources and transpiled) are private to the application; this requires the web server to mount the resources and transpiled directories inside the application directory",
+      "type": "boolean"
     },
     "locales": {
       "description": "Include other translations than 'en'",

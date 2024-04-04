@@ -499,7 +499,6 @@ qx.Class.define("qx.tool.utils.Utils", {
       let dir = qx.util.ResourceManager.getInstance().toUri(
         "qx/tool/cli/templates/template_vars.js"
       );
-
       dir = path.dirname(dir);
       return dir;
     },
