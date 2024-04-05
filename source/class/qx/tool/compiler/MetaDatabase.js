@@ -67,6 +67,12 @@ qx.Class.define("qx.tool.compiler.MetaDatabase", {
           await qx.tool.utils.Utils.makeParentDir(filename);
           let meta = new qx.tool.compiler.MetaExtraction(this.getRootDir());
           await meta.loadMeta(filename);
+          const data = meta.getMetaData();
+          if (!data) {
+            delete this.__metaByClassname[classname];
+            delete this.__metaByFilename[filename];
+            continue;
+          }
           this.__metaByClassname[classname] = meta;
           let classFilename = meta.getMetaData().classFilename;
           classFilename = path.resolve(
