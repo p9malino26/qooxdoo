@@ -325,35 +325,6 @@ qx.Class.define("qx.tool.compiler.Es6ify", {
     },
 
     /**
-     * Plugin that makes sure that every single line block is wrapped in braces
-     *
-     * @returns
-     */
-    __pluginSingleLineBlocks() {
-      function loopStatement(path) {
-        if (path.node.body.type == "BlockStatement") {
-          return;
-        }
-        let block = types.blockStatement([path.node.body]);
-        path.node.body = block;
-      }
-      return {
-        visitor: {
-          IfStatement(path) {
-            if (path.node.consequent.type == "BlockStatement") {
-              return;
-            }
-            let block = types.blockStatement([path.node.consequent]);
-            path.node.consequent = block;
-          },
-          DoWhileStatement: loopStatement,
-          ForStatement: loopStatement,
-          WhileStatement: loopStatement
-        }
-      };
-    },
-
-    /**
      * Tries to convert functions into arrow functions
      * @returns
      */
