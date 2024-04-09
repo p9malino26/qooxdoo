@@ -132,6 +132,7 @@ qx.Class.define("qx.ui.form.ToggleButton", {
     readOnly: {
       check: "Boolean",
       event: "changeReadOnly",
+      apply: "_applyReadOnly",
       init: false
     }
   },
@@ -143,6 +144,16 @@ qx.Class.define("qx.ui.form.ToggleButton", {
   */
 
   members: {
+    _forwardStates: {
+      checked: true,
+      undetermined: true,
+      readonly: true,
+      disabled: true,
+      hovered: true,
+      abandoned: true,
+      pressed: true
+    },
+
     /** The assigned {@link qx.ui.form.RadioGroup} which handles the switching between registered buttons */
     _applyGroup(value, old) {
       if (old) {
@@ -184,6 +195,19 @@ qx.Class.define("qx.ui.form.ToggleButton", {
      */
     _applyTriState(value, old) {
       this._applyValue(this.getValue());
+    },
+
+    // property readOnly
+    _applyReadOnly(value) {
+      if (value) {
+        this.addState("readonly");
+        this.addState("disabled");
+      } else {
+        this.removeState("readonly");
+        if (this.isEnabled()) {
+          this.removeState("disabled");
+        }
+      }
     },
 
     /**

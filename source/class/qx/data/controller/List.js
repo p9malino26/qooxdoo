@@ -714,6 +714,11 @@ qx.Class.define("qx.data.controller.List", {
           index
         );
       }
+
+      // readonly state
+      if (typeof item.setReadOnly === "function") {
+        this.bind("target.readOnly", item, "readOnly");
+      }
     },
 
     /**
