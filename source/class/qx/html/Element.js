@@ -1673,7 +1673,6 @@ qx.Class.define("qx.html.Element", {
     _applyStyle(key, value, oldValue) {
       // Nothing
     },
-
     /**
      * Convenience method to modify a set of styles at once.
      *
@@ -1682,8 +1681,7 @@ qx.Class.define("qx.html.Element", {
      * @param direct {Boolean?false} Whether the values should be applied
      *    directly (without queuing)
      * @return {qx.html.Element} this object (for chaining support)
-     */
-    setStyles(map, direct) {
+     */ setStyles(map, direct) {
       // inline calls to "set" because this method is very
       // performance critical!
       var Style = qx.bom.element.Style;

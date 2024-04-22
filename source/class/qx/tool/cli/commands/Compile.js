@@ -194,16 +194,11 @@ qx.Class.define("qx.tool.cli.commands.Compile", {
         alias: "f"
       },
 
-      meta: {
-        describe: "Outputs meta data",
-        type: "boolean"
-      },
-
       typescript: {
         alias: "T",
-        describe:
-          "Outputs typescript definitions in qooxdoo.d.ts, implies --meta",
-        type: "boolean"
+        describe: "Outputs typescript definitions in qooxdoo.d.ts",
+        type: "boolean",
+        default: null
       },
 
       "add-created-at": {
@@ -373,6 +368,9 @@ qx.Class.define("qx.tool.cli.commands.Compile", {
 
     /** @type{String} the path to the root of the meta files by classname */
     __metaDir: null,
+
+    /** @type{Boolean} whether the typescript output is enabled */
+    __typescriptEnabled: false,
 
     /** @type{String} the name of the typescript file to generate */
     __typescriptFile: null,
@@ -663,9 +661,8 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
             );
           }
 
-          let stat = await qx.tool.utils.files.Utils.safeStat(
-            "source/index.html"
-          );
+          let stat =
+            await qx.tool.utils.files.Utils.safeStat("source/index.html");
 
           if (stat) {
             qx.tool.compiler.Console.print(
@@ -734,9 +731,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
           ) {
             isFirstWatcher = false;
             try {
-              if (this.argv.meta || this.argv.typescript) {
-                await this.__attachTypescriptWatcher(watch);
-              }
+              await this.__attachTypescriptWatcher(watch);
             } catch (ex) {
               qx.tool.compiler.Console.error(ex);
             }
@@ -748,9 +743,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
 
       if (!this.argv.watch) {
         try {
-          if (this.argv.meta || this.argv.typescript) {
-            await this.__attachTypescriptWatcher(null);
-          }
+          await this.__attachTypescriptWatcher(null);
         } catch (ex) {
           qx.tool.compiler.Console.error(ex);
         }
@@ -809,7 +802,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
 
       // Do the inital write
       let tsWriter = null;
-      if (this.argv.typescript) {
+      if (this.__typescriptEnabled) {
         qx.tool.compiler.Console.info(`Generating typescript output ...`);
         tsWriter = new qx.tool.compiler.targets.TypeScriptWriter(metaDb);
         if (this.__typescriptFile) {
@@ -851,7 +844,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
           await Promise.all(addFilePromises);
           await metaDb.reparseAll();
           await metaDb.save();
-          if (this.argv.typescript) {
+          if (this.__typescriptEnabled) {
             await tsWriter.process();
           }
         }
@@ -890,6 +883,16 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
           );
         }
         delete data.babelOptions;
+      }
+
+      if (qx.lang.Type.isBoolean(data?.meta?.typescript)) {
+        this.__typescriptEnabled = data.meta.typescript;
+      } else if (qx.lang.Type.isString(data?.typescript)) {
+        this.__typescriptEnabled = true;
+        this.__typescriptFile = data.typescript;
+      }
+      if (qx.lang.Type.isBoolean(this.argv.typescript)) {
+        this.__typescriptEnabled = this.argv.typescript;
       }
 
       var argvAppNames = null;
@@ -1086,7 +1089,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
       let targetOutputPaths = {};
       let makers = [];
 
-      this.__metaDir = data.meta;
+      this.__metaDir = data.meta?.output;
       if (!this.__metaDir) {
         this.__metaDir = path.relative(
           process.cwd(),
@@ -1323,7 +1326,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
 
         if (typeof targetConfig.typescript == "string") {
           Console.warn(
-            "The 'typescript' property inside a target definition is deprecated - please see top level 'typescript' and 'meta' properties"
+            "The 'typescript' property inside a target definition is deprecated - please see top level 'meta.typescript' property"
           );
 
           if (this.__typescriptFile) {
@@ -1334,6 +1337,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
                 targetConfig.typescript
             );
           } else {
+            this.__typescriptEnabled = true;
             this.__typescriptFile = path.relative(
               process.cwd(),
               path.resolve(targetConfig.typescript)
