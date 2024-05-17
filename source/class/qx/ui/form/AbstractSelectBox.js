@@ -211,14 +211,18 @@ qx.Class.define("qx.ui.form.AbstractSelectBox", {
       }
       this.getChildControl("list").setReadOnly(value);
     },
+
     /*
     ---------------------------------------------------------------------------
     PUBLIC METHODS
     ---------------------------------------------------------------------------
-    */ /**
+    */
+
+    /**
      * Returns the list widget.
      * @return {qx.ui.form.List} the list
-     */ getChildrenContainer() {
+     */
+    getChildrenContainer() {
       return this.getChildControl("list");
     },
     
