@@ -122,6 +122,13 @@ qx.Class.define("qx.ui.form.AbstractSelectBox", {
   */
 
   members: {
+    /**
+     * @Override
+     */
+    _forwardStates: {
+      readonly: true
+    },
+
     // overridden
     _createChildControlImpl(id, hash) {
       var control;
@@ -193,17 +200,29 @@ qx.Class.define("qx.ui.form.AbstractSelectBox", {
       this.getChildControl("list").setMaxHeight(value);
     },
 
-    _applyReadOnly() {
-      // no-op
+    /**
+     * Apply for `readOnly` property.
+     */
+    _applyReadOnly(value) {
+      if (value) {
+        this.addState("readonly");
+      } else {
+        this.removeState("readonly");
+      }
+      this.getChildControl("list").setReadOnly(value);
     },
+
     /*
     ---------------------------------------------------------------------------
     PUBLIC METHODS
     ---------------------------------------------------------------------------
-    */ /**
+    */
+
+    /**
      * Returns the list widget.
      * @return {qx.ui.form.List} the list
-     */ getChildrenContainer() {
+     */
+    getChildrenContainer() {
       return this.getChildControl("list");
     },
 
