@@ -48,6 +48,7 @@ qx.Class.define("qx.data.controller.CheckedList", {
   },
 
   properties: {
+    /** The array of model items which are ticked in the list */
     checked: {
       init: null,
       nullable: true,

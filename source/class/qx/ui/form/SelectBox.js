@@ -119,6 +119,14 @@ qx.Class.define("qx.ui.form.SelectBox", {
     /**
      * @Override
      */
+    _applyReadOnly(value) {
+      this.getChildControl("atom").setEnabled(!value);
+      super._applyReadOnly(value);
+    },
+
+    /**
+     * @Override
+     */
     _defaultFormat(item) {
       if (item) {
         if (typeof item.isRich == "function" && item.isRich()) {
