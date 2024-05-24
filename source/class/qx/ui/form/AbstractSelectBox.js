@@ -209,7 +209,12 @@ qx.Class.define("qx.ui.form.AbstractSelectBox", {
       } else {
         this.removeState("readonly");
       }
-      this.getChildControl("list").setReadOnly(value);
+      let lst = this.getChildControl("list");
+      if (typeof lst.setReadOnly == "function") {
+        lst.setReadOnly(value);
+      } else {
+        lst.setEnabled(!value);
+      }
     },
 
     /*
