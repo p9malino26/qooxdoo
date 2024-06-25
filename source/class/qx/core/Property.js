@@ -680,7 +680,6 @@ qx.Bootstrap.define("qx.core.Property", {
           );
         }
       }
-
       method.getAsync[name] = getName + "Async";
       if (members[method.getAsync[name]] === undefined) {
         members[method.getAsync[name]] = new Function(
@@ -696,12 +695,6 @@ qx.Bootstrap.define("qx.core.Property", {
       }
 
       members[method.get[name]].$$install = function () {
-        if (
-          name == "document" &&
-          clazz.classname == "com.zenesis.grasshopper.security.User"
-        ) {
-          debugger;
-        }
         qx.core.Property.__installOptimizedGetter(
           clazz,
           name,
@@ -759,7 +752,6 @@ qx.Bootstrap.define("qx.core.Property", {
           setName +
           "Async.apply(this, arguments);"
       );
-
       method.setImpl[name] = "$$set" + upname + "Impl";
       members[setName].$$install = function () {
         qx.core.Property.__installOptimizedSetter(clazz, name, "set");
@@ -905,13 +897,39 @@ qx.Bootstrap.define("qx.core.Property", {
       return !!this.__dereference[check];
     },
 
+    /** @type {Map} Internal data field for error messages used by {@link #error} */
+    __errors: {
+      0: "Could not change or apply init value after constructing phase!",
+      1: "Requires exactly one argument!",
+      2: "Undefined value is not allowed!",
+      3: "Does not allow any arguments!",
+      4: "Null value is not allowed!",
+      5: "Is invalid!"
+    },
+
     /**
      * Error method used by the property system to report errors.
      *
-     * @param msg {String} the messaeg to output
+     * @param obj {qx.core.Object} Any qooxdoo object
+     * @param id {Integer} Numeric error identifier
+     * @param property {String} Name of the property
+     * @param variant {String} Name of the method variant e.g. "set", "reset", ...
+     * @param value {var} Incoming value
      */
-    error(msg) {
-      throw new Error(msg);
+    error(obj, id, property, variant, value) {
+      var classname = obj.constructor.classname;
+      var msg =
+        "Error in property " +
+        property +
+        " of class " +
+        classname +
+        " in method " +
+        this.$$method[variant][property] +
+        " with incoming value '" +
+        value +
+        "': ";
+
+      throw new Error(msg + (this.__errors[id] || "Unknown reason: " + id));
     },
 
     /**
