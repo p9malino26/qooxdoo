@@ -295,6 +295,11 @@ qx.Class.define("qx.tool.compiler.Es6ify", {
       return replacement;
     },
 
+    /**
+     * Plugin that makes sure that every single line block is wrapped in braces
+     *
+     * @returns
+     */
     __pluginSingleLineBlocks() {
       function loopStatement(path) {
         if (path.node.body.type == "BlockStatement") {

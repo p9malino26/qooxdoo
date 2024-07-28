@@ -281,10 +281,6 @@ qx.Class.define("qx.html.Node", {
       };
 
       const scanDomNode = (parentElement, domNode, idx) => {
-        if (domNode.nodeType == window.Node.COMMENT_NODE) {
-          // TODO: Handle comments
-          return;
-        }
         if (domNode.nodeType == window.Node.TEXT_NODE) {
           let newChild = qx.html.Factory.getInstance().createElement("#text");
           newChild._useNodeImpl(domNode);
@@ -1272,7 +1268,8 @@ qx.Class.define("qx.html.Node", {
     ---------------------------------------------------------------------------
     PROPERTY SUPPORT
     ---------------------------------------------------------------------------
-    */ /**
+    */ 
+    /**
      * Registers a property and the implementations used to read the property value
      * from the DOM and to set the property value onto the DOM.  This allows the element
      * to have a simple `setProperty` method that knows how to read and write the value.
@@ -1288,7 +1285,8 @@ qx.Class.define("qx.html.Node", {
      * @param getter {Function?} function to read from the DOM
      * @param setter {Function?} function to copy to the DOM
      * @param serialize {Function?} function to serialize the value to HTML
-     */ registerProperty(key, get, set, serialize) {
+     */ 
+    registerProperty(key, get, set, serialize) {
       if (!this._properties) {
         this._properties = {};
       }
@@ -1351,14 +1349,16 @@ qx.Class.define("qx.html.Node", {
      * @param direct {Boolean?false} Whether the value should be applied
      *    directly (without queuing)
      * @return {qx.html.Element} this object (for chaining support)
-     */ _setProperty(key, value, direct) {
+     */ 
+    _setProperty(key, value, direct) {
       if (!this._properties || !this._properties[key]) {
         this.registerProperty(key, null, null);
       }
       if (this._properties[key].value == value) {
         return this;
       }
-      this._properties[key].value = value; // Uncreated elements simply copy all data
+      this._properties[key].value = value;
+      // Uncreated elements simply copy all data
       // on creation. We don't need to remember any
       // jobs. It is a simple full list copy.
       if (this._domNode) {
