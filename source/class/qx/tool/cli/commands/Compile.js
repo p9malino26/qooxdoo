@@ -147,13 +147,6 @@ qx.Class.define("qx.tool.cli.commands.Compile", {
         type: "boolean"
       },
 
-      browserify: {
-        describe:
-          "Whether to browserify require'd modules for browser applications",
-        default: true,
-        type: "boolean"
-      },
-
       "save-source-in-map": {
         describe: "Saves the source code in the map file (build target only)",
         type: "boolean",
@@ -203,6 +196,11 @@ qx.Class.define("qx.tool.cli.commands.Compile", {
 
       "add-created-at": {
         describe: "Adds code to populate object's $$createdAt",
+        type: "boolean"
+      },
+
+      "verbose-created-at": {
+        describe: "Adds additional detail to $$createdAt",
         type: "boolean"
       },
 
@@ -383,7 +381,7 @@ qx.Class.define("qx.tool.cli.commands.Compile", {
 
       let configDb = await qx.tool.cli.ConfigDb.getInstance();
       if (this.argv["feedback"] === null) {
-        this.argv["feedback"] = configDb.setting("qx.default.feedback", true);
+        this.argv["feedback"] = configDb.db("qx.default.feedback", true);
       }
 
       if (this.argv.verbose) {
@@ -396,7 +394,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
         qx.tool.compiler.Console.getInstance().setMachineReadable(true);
       } else {
         let configDb = await qx.tool.cli.ConfigDb.getInstance();
-        let color = configDb.setting("qx.default.color", null);
+        let color = configDb.db("qx.default.color", null);
         if (color) {
           let colorOn = consoleControl.color(color.split(" "));
           process.stdout.write(colorOn + consoleControl.eraseLine());
@@ -591,7 +589,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
           var analyser = maker.getAnalyser();
           let cfg = await qx.tool.cli.ConfigDb.getInstance();
           analyser.setWritePoLineNumbers(
-            cfg.setting("qx.translation.strictPoCompatibility", false)
+            cfg.db("qx.translation.strictPoCompatibility", false)
           );
 
           if (!(await fs.existsAsync(maker.getOutputDir()))) {
@@ -791,14 +789,11 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
       }
 
       for (let filename of classFiles) {
-        if (this.argv.verbose) {
-          qx.tool.compiler.Console.info(`Processing ${filename} ...`);
-        }
         await metaDb.addFile(filename, !!this.argv.clean);
       }
       await metaDb.reparseAll();
       await metaDb.save();
-      this.fireDataEvent("writtenMetaData", metaDb);
+      await this.fireDataEventAsync("writtenMetaData", metaDb);
 
       // Do the inital write
       let tsWriter = null;
@@ -808,7 +803,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
         if (this.__typescriptFile) {
           tsWriter.setOutputTo(this.__typescriptFile);
         } else {
-          tsWriter.setOutputTo(path.join("compiled", "qooxdoo.d.ts"));
+          tsWriter.setOutputTo(path.join(this.__metaDir, "..", "qooxdoo.d.ts"));
         }
         await tsWriter.process();
       }
@@ -887,9 +882,12 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
 
       if (qx.lang.Type.isBoolean(data?.meta?.typescript)) {
         this.__typescriptEnabled = data.meta.typescript;
-      } else if (qx.lang.Type.isString(data?.typescript)) {
+      } else if (qx.lang.Type.isString(data?.meta?.typescript)) {
         this.__typescriptEnabled = true;
-        this.__typescriptFile = data.typescript;
+        this.__typescriptFile = path.relative(
+          process.cwd(),
+          path.resolve(data?.meta?.typescript)
+        );
       }
       if (qx.lang.Type.isBoolean(this.argv.typescript)) {
         this.__typescriptEnabled = this.argv.typescript;
@@ -1185,7 +1183,6 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
         target.setWriteLibraryInfo(this.argv.writeLibraryInfo);
         target.setUpdatePoFiles(this.argv.updatePoFiles);
         target.setLibraryPoPolicy(this.argv.libraryPo);
-        target.setBrowserify(this.argv.browserify);
 
         let fontsConfig = targetConfig.fonts || {};
         let preferLocalFonts = true;
@@ -1402,6 +1399,11 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
           targetConfig["addCreatedAt"] || t.argv["addCreatedAt"];
         if (addCreatedAt) {
           maker.getAnalyser().setAddCreatedAt(true);
+        }
+        const verboseCreatedAt =
+          targetConfig["verboseCreatedAt"] || t.argv["verboseCreatedAt"];
+        if (verboseCreatedAt) {
+          maker.getAnalyser().setVerboseCreatedAt(true);
         }
 
         for (let library of librariesArray) {

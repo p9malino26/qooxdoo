@@ -495,10 +495,12 @@ qx.Class.define("qx.tool.utils.Utils", {
     /**
      * Returns the absolute path to the template directory
      * @return {String}
-     */ getTemplateDir() {
+     */ 
+    getTemplateDir() {
       let dir = qx.util.ResourceManager.getInstance().toUri(
         "qx/tool/cli/templates/template_vars.js"
       );
+
       dir = path.dirname(dir);
       return dir;
     },
