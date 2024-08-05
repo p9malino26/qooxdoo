@@ -375,6 +375,10 @@ qx.Class.define("qx.tool.compiler.ClassFile", {
               sourceMaps: true,
               presets: [
                 [
+                  require.resolve("@babel/preset-react"),
+                  qx.tool.compiler.ClassFile.JSX_OPTIONS
+                ],
+                [
                   {
                     plugins: [myPlugins.CodeElimination]
                   }
@@ -387,11 +391,7 @@ qx.Class.define("qx.tool.compiler.ClassFile", {
                 ],
 
                 [require.resolve("@babel/preset-env"), options],
-                [require.resolve("@babel/preset-typescript")],
-                [
-                  require.resolve("@babel/preset-react"),
-                  qx.tool.compiler.ClassFile.JSX_OPTIONS
-                ]
+                [require.resolve("@babel/preset-typescript")]
               ],
 
               generatorOpts: {
