@@ -147,13 +147,6 @@ qx.Class.define("qx.tool.cli.commands.Compile", {
         type: "boolean"
       },
 
-      browserify: {
-        describe:
-          "Whether to browserify require'd modules for browser applications",
-        default: true,
-        type: "boolean"
-      },
-
       "save-source-in-map": {
         describe: "Saves the source code in the map file (build target only)",
         type: "boolean",
@@ -388,7 +381,7 @@ qx.Class.define("qx.tool.cli.commands.Compile", {
 
       let configDb = await qx.tool.cli.ConfigDb.getInstance();
       if (this.argv["feedback"] === null) {
-        this.argv["feedback"] = configDb.setting("qx.default.feedback", true);
+        this.argv["feedback"] = configDb.db("qx.default.feedback", true);
       }
 
       if (this.argv.verbose) {
@@ -401,7 +394,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
         qx.tool.compiler.Console.getInstance().setMachineReadable(true);
       } else {
         let configDb = await qx.tool.cli.ConfigDb.getInstance();
-        let color = configDb.setting("qx.default.color", null);
+        let color = configDb.db("qx.default.color", null);
         if (color) {
           let colorOn = consoleControl.color(color.split(" "));
           process.stdout.write(colorOn + consoleControl.eraseLine());
@@ -596,7 +589,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
           var analyser = maker.getAnalyser();
           let cfg = await qx.tool.cli.ConfigDb.getInstance();
           analyser.setWritePoLineNumbers(
-            cfg.setting("qx.translation.strictPoCompatibility", false)
+            cfg.db("qx.translation.strictPoCompatibility", false)
           );
 
           if (!(await fs.existsAsync(maker.getOutputDir()))) {
@@ -1190,7 +1183,6 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
         target.setWriteLibraryInfo(this.argv.writeLibraryInfo);
         target.setUpdatePoFiles(this.argv.updatePoFiles);
         target.setLibraryPoPolicy(this.argv.libraryPo);
-        target.setBrowserify(this.argv.browserify);
 
         let fontsConfig = targetConfig.fonts || {};
         let preferLocalFonts = true;

@@ -1000,7 +1000,7 @@ qx.Class.define("qx.html.Element", {
         return true;
       }
 
-      var focusable = qx.event.handler.FocusCharacteristics.FOCUSABLE_ELEMENTS;
+      var focusable = qx.event.handler.Focus.FOCUSABLE_ELEMENTS;
       if (tabIndex >= 0 && focusable[this._nodeName]) {
         return true;
       }
@@ -1034,9 +1034,7 @@ qx.Class.define("qx.html.Element", {
      * @return {Boolean} <code>true</code> when the element is focusable.
      */
     isNativelyFocusable() {
-      return !!qx.event.handler.FocusCharacteristics.FOCUSABLE_ELEMENTS[
-        this._nodeName
-      ];
+      return !!qx.event.handler.Focus.FOCUSABLE_ELEMENTS[this._nodeName];
     },
 
     /*
@@ -1694,6 +1692,7 @@ qx.Class.define("qx.html.Element", {
         if (!this.__styleJobs) {
           this.__styleJobs = {};
         }
+
         for (var key in map) {
           var value = map[key];
           if (this.__styleValues[key] == value) {
