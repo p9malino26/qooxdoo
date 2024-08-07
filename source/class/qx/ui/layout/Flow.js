@@ -221,19 +221,16 @@ qx.Class.define("qx.ui.layout.Flow", {
     },
 
     /**
+     * @override
+     *
      * The FlowLayout tries to add as many Children as possible to the current 'Line'
      * and when it sees that the next Child won't fit, it starts on a new Line, continuing
      * until all the Children have been added.
      * To enable alignX "left", "center", "right" renderLayout has to calculate the positions
      * of all a Line's children before it draws them.
-     *
-     * @param availWidth {Integer} Final width available for the content (in pixel)
-     * @param availHeight {Integer} Final height available for the content (in pixel)
-     * @param padding {Map} Map containing the padding values. Keys:
-     * <code>top</code>, <code>bottom</code>, <code>left</code>, <code>right</code>
      */
     renderLayout(availWidth, availHeight, padding) {
-      var children = this._getLayoutChildren();
+      var children = this._getLayoutChildren(); //super.renderLayout
 
       if (this.getReversed()) {
         children = children.concat().reverse();
@@ -258,12 +255,12 @@ qx.Class.define("qx.ui.layout.Flow", {
      * @param line {Map} A line configuration as returned by
      *    {@link LineSizeIterator#computeNextLine}.
      * @param lineTop {Integer} The line's top position
-     * @param availWidth {Integer} The available line width
+     * @param availWidth {Integer} The available width of the widget that this layout applies to
      * @param padding {Map} Map containing the padding values. Keys:
      * <code>top</code>, <code>bottom</code>, <code>left</code>, <code>right</code>
      */
     __renderLine(line, lineTop, availWidth, padding) {
-      var util = qx.ui.layout.Util;
+      var Util = qx.ui.layout.Util;
 
       var left = padding.left;
       if (this.getAlignX() != "left") {
@@ -279,16 +276,16 @@ qx.Class.define("qx.ui.layout.Flow", {
         var marginTop = child.getMarginTop();
         var marginBottom = child.getMarginBottom();
 
-        var top = util.computeVerticalAlignOffset(
-          child.getAlignY() || this.getAlignY(),
-          marginTop + size.height + marginBottom,
-          line.height,
-          marginTop,
-          marginBottom
+        var top = Util.computeVerticalAlignOffset(
+          child.getAlignY() || this.getAlignY(), //align
+          marginTop + size.height + marginBottom, //height
+          line.height, //availheight
+          marginTop, //marignTop
+          marginBottom //marginBottom
         );
 
         var layoutProps = child.getLayoutProperties();
-        if (layoutProps.stretch && layoutProps.stretch) {
+        if (layoutProps.stretch) {
           size.width += availWidth - line.width;
         }
 

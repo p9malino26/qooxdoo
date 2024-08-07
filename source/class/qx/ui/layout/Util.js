@@ -180,11 +180,13 @@ qx.Class.define("qx.ui.layout.Util", {
     },
 
     /**
-     * Computes the offset which needs to be added to the top position
-     * to result in the stated vertical alignment. Also respects
-     * existing margins (without collapsing).
+     * For a widget, 
+     * this method computes the offset which needs to be added its top position relative to a parent
+     * to result in the stated vertical alignment. 
+
+     * Also respects existing margins (without collapsing).
      *
-     * @param align {String} One of <code>top</code>, <code>middle</code> or <code>bottom</code>.
+     * @param align {"top" | "middle" | "bottom"} Vertical alignment of the widget
      * @param height {Integer} The visible height of the widget
      * @param availHeight {Integer} The available inner height of the parent
      * @param marginTop {Integer?0} Optional top margin of the widget

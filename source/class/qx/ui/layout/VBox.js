@@ -168,6 +168,12 @@ qx.Class.define("qx.ui.layout.VBox", {
 
   members: {
     __heights: null,
+    /**
+     * @type {{[childIndex: number]: number}}
+     * Cache for flex values for each child
+     * Maps the index of the child in the layout's children array to its flex property.
+     * Only children with a flex layout property set are included in this map.
+     */
     __flexs: null,
     __enableFlex: null,
     __children: null,
@@ -291,18 +297,18 @@ qx.Class.define("qx.ui.layout.VBox", {
       }
 
       // First run to cache children data and compute allocated height
-      var i, child, height, percent;
+      var i, child, height, proportion;
       var heights = [],
         hint;
       var allocatedHeight = gaps;
 
       for (i = 0; i < length; i += 1) {
-        percent = this.__heights[i];
+        proportion = this.__heights[i];
         hint = children[i].getSizeHint();
 
         height =
-          percent != null
-            ? Math.floor((availHeight - gaps) * percent)
+          proportion != null
+            ? Math.floor((availHeight - gaps) * proportion)
             : hint.height;
 
         // Limit computed value

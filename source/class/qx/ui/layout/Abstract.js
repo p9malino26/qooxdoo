@@ -117,7 +117,7 @@ qx.Class.define("qx.ui.layout.Abstract", {
      * This computes the size hint of the layout and returns it.
      *
      * @abstract
-     * @return {Map} The size hint.
+     * @return {{width: number?, height: number?, minWidth: number?, minHeight: number?} | null} The size hint.
      */
     _computeSizeHint() {
       return null;
@@ -175,9 +175,9 @@ qx.Class.define("qx.ui.layout.Abstract", {
     },
 
     /**
-     * This method is called by the widget to connect the widget with the layout.
+     * This method is called by the widget that is assigned this layout to connect said widget with the layout.
      *
-     * @param widget {qx.ui.core.Widget} The widget to connect to.
+     * @param widget {qx.ui.core.Widget} The widget to assign this layout to.
      */
     connectToWidget(widget) {
       if (widget && this.__widget) {
@@ -216,7 +216,7 @@ qx.Class.define("qx.ui.layout.Abstract", {
     /**
      * Returns the list of all layout relevant children.
      *
-     * @return {Array} List of layout relevant children.
+     * @return {qx.ui.core.Widget[]} List of layout relevant children.
      */
     _getLayoutChildren() {
       return this.__widget.getLayoutChildren();

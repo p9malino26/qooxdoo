@@ -144,7 +144,7 @@ qx.Class.define("qx.ui.splitpane.Pane", {
     },
 
     /**
-     * Creates a blocker for the splitter which takes all bouse events and
+     * Creates a blocker for the splitter which takes all mouse events and
      * also handles the offset and cursor.
      *
      * @param orientation {String} The orientation of the pane.
