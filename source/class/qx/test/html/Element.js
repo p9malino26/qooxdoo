@@ -237,6 +237,50 @@ qx.Class.define("qx.test.html.Element", {
       );
     },
 
+    testNestedSerialize() {
+      const parseHtml = raw => {
+        let el = document.createElement("div");
+        el.innerHTML = raw;
+        let res = el.querySelector("*");
+        res.remove();
+        return res;
+      };
+
+      let levelOne = new qx.test.html.ExampleLevelOneElement().set({
+        qxObjectId: "rootExample"
+      });
+
+      let html = levelOne.serialize();
+      let dom = parseHtml(html);
+      let tmp;
+
+      levelOne.useNode(dom);
+      this.assertTrue(dom === levelOne.getDomElement(false));
+
+      tmp = dom.querySelector('div[id="my-levelOne-twoAlpha"]');
+      this.assertTrue(
+        tmp && tmp === levelOne.getQxObject("levelOne-twoAlpha").getDomElement()
+      );
+
+      tmp = dom.querySelector('div[id="my-levelOne-element"]');
+      this.assertTrue(
+        tmp && tmp === levelOne.getQxObject("levelOne-element").getDomElement()
+      );
+
+      let tmpLevelTwo_elementAlpha = dom.querySelector(
+        'div[id="my-levelTwo-elementAlpha"]'
+      );
+
+      this.assertTrue(
+        tmpLevelTwo_elementAlpha &&
+          tmpLevelTwo_elementAlpha ===
+            levelOne
+              .getQxObject("levelOne-twoAlpha")
+              .getQxObject("levelTwo-elementAlpha")
+              .getDomElement()
+      );
+    },
+
     testBasics() {
       //
       // BASICS

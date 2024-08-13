@@ -381,7 +381,7 @@ qx.Class.define("qx.tool.cli.commands.Compile", {
 
       let configDb = await qx.tool.cli.ConfigDb.getInstance();
       if (this.argv["feedback"] === null) {
-        this.argv["feedback"] = configDb.db("qx.default.feedback", true);
+        this.argv["feedback"] = configDb.setting("qx.default.feedback", true);
       }
 
       if (this.argv.verbose) {
@@ -394,7 +394,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
         qx.tool.compiler.Console.getInstance().setMachineReadable(true);
       } else {
         let configDb = await qx.tool.cli.ConfigDb.getInstance();
-        let color = configDb.db("qx.default.color", null);
+        let color = configDb.setting("qx.default.color", null);
         if (color) {
           let colorOn = consoleControl.color(color.split(" "));
           process.stdout.write(colorOn + consoleControl.eraseLine());
@@ -589,7 +589,7 @@ Framework: v${await this.getQxVersion()} in ${await this.getQxPath()}`);
           var analyser = maker.getAnalyser();
           let cfg = await qx.tool.cli.ConfigDb.getInstance();
           analyser.setWritePoLineNumbers(
-            cfg.db("qx.translation.strictPoCompatibility", false)
+            cfg.setting("qx.translation.strictPoCompatibility", false)
           );
 
           if (!(await fs.existsAsync(maker.getOutputDir()))) {

@@ -88,7 +88,7 @@ qx.Class.define("qx.compiler.CompilerApi", {
       }
       // token
       let cfg = await qx.tool.cli.ConfigDb.getInstance();
-      let npm = cfg.db("npm", {});
+      let npm = cfg.setting("npm", {});
       if (!npm.token) {
         // call require("inquirer") here - not in the head.
         // otherwise it will be called during initialization.

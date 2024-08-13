@@ -136,6 +136,7 @@ qx.Class.define("qx.event.handler.Keyboard", {
           qx.event.type.KeyInput,
           [domEvent, target, charCode]
         );
+
         this.__manager.dispatchEvent(target, event);
       } // Fire user action event
       // Needs to check if still alive first
@@ -166,6 +167,7 @@ qx.Class.define("qx.event.handler.Keyboard", {
         qx.event.type.KeySequence,
         [domEvent, target, keyIdentifier]
       );
+
       this.__manager.dispatchEvent(target, event);
 
       // IE and Safari suppress a "keypress" event if the "keydown" event's
@@ -240,6 +242,7 @@ qx.Class.define("qx.event.handler.Keyboard", {
         this.__onKeyUpDown,
         this
       );
+
       this.__onKeyPressWrapper = qx.lang.Function.listener(
         this.__onKeyPress,
         this
@@ -253,6 +256,7 @@ qx.Class.define("qx.event.handler.Keyboard", {
         "keydown",
         this.__onKeyUpDownWrapper
       );
+
       Event.addNativeListener(
         this.__root,
         "keypress",
@@ -273,11 +277,13 @@ qx.Class.define("qx.event.handler.Keyboard", {
         "keyup",
         this.__onKeyUpDownWrapper
       );
+
       Event.removeNativeListener(
         this.__root,
         "keydown",
         this.__onKeyUpDownWrapper
       );
+
       Event.removeNativeListener(
         this.__root,
         "keypress",
@@ -439,9 +445,11 @@ qx.Class.define("qx.event.handler.Keyboard", {
               self.__onKeyPress(domEvent);
             }
           };
+
           var listener = qx.event.GlobalError.observeMethod(
             this.__inputListeners[hash].callback
           );
+
           qx.bom.Event.addNativeListener(target, "keypress", listener);
         }
       },

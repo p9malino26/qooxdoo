@@ -162,10 +162,10 @@ qx.Class.define("qx.tool.cli.ConfigDb", {
     /**
      * Wrapper for non-static version of db
      *
-     * @see qx.tool.cli.ConfigDb.db
+     * @see qx.tool.cli.ConfigDb.setting
      */
-    db(path, defaultValue) {
-      return qx.tool.cli.ConfigDb.getInstance().db(path, defaultValue);
+    setting(path, defaultValue) {
+      return qx.tool.cli.ConfigDb.getInstance().setting(path, defaultValue);
     }
   }
 });

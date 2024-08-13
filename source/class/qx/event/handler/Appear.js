@@ -164,6 +164,7 @@ qx.Class.define("qx.event.handler.Appear", {
           var evt = qx.event.Registration.createEvent(
             displayed ? "appear" : "disappear"
           );
+
           let tmp = this.__manager.dispatchEvent(elem, evt);
           promise = qx.event.Utils.queuePromise(promise, tmp);
         }

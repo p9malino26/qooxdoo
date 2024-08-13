@@ -1430,7 +1430,8 @@ qx.Bootstrap.define("qx.core.Property", {
             '","',
             variant,
             '",value);'
-          ); // Undefined check
+          );
+          // Undefined check
           code.push(
             'if(value===undefined)prop.error(this,2,"',
             name,

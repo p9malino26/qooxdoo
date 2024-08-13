@@ -100,7 +100,7 @@ qx.Class.define("qx.tool.cli.commands.package.Update", {
       }
 
       let cfg = await qx.tool.cli.ConfigDb.getInstance();
-      let github = cfg.db("github", {});
+      let github = cfg.setting("github", {});
 
       // Create the cache
       if (!this.argv.search) {

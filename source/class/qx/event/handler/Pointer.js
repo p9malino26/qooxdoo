@@ -95,7 +95,8 @@ qx.Class.define("qx.event.handler.Pointer", {
         useEmitter = true;
       }
       this._initObserver(this._onPointerEvent, useEmitter);
-    } /**
+    }
+    /**
      * Fire a pointer event with the given parameters
      *
      * @param domEvent {Event} DOM event
@@ -138,6 +139,7 @@ qx.Class.define("qx.event.handler.Pointer", {
           true,
           true
         ]);
+
         if (
           (domEvent.getPointerType() !== "mouse" ||
             domEvent.button <= qx.event.handler.PointerCore.LEFT_BUTTON) &&
