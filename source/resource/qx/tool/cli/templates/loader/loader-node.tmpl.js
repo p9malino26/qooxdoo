@@ -111,11 +111,11 @@
       if (verbose) {
         var stack;
         var res;
-        var promise = new Promise(r => (res = r))
+        var promise = new Promise(r => (res = r));
         (async () => {
           await promise;
           stack = new Error().stack;
-        })()
+        })();
         Object.defineProperty(value, "stack", {
           get: function() {
             if (res) {
